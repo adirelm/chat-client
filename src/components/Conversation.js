@@ -70,8 +70,11 @@ export default function Conversation(props) {
 
   const getMessages = async () => {
     await props?.socket.on("messages", async (newMessages, page) => {
-      if(newMessages.length > 0)
-      setMessages(newMessages);
+      if (page > 1)
+        setMessages(prevState => [...newMessages, ...prevState]);
+      else
+        setMessages(newMessages);
+      console.log(`Received page ${page} of messages`, newMessages);
     });
   };
 
@@ -87,23 +90,28 @@ export default function Conversation(props) {
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
-    props.socket.emit('messages', page.current);
+    props.socket.emit('messages', props.selectedRoom, page.current);
+    console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
+
+  // Open a channel to receive messages
+  useEffect(() => {
+    console.log('Initial get to receive messages')
+    getMessages();
+  }, []);
 
   useEffect(() => {
     setTextValue("");
     if (props.selectedRoom) {
       page.current = 1;
       setMessages([]);
-      // Initial get, bring messages of current room
-      getMessages();
     }
   }, [props.selectedRoom]);
 
   useEffect(() => {
     // Add new incoming message
     if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
-      setMessages(prevState => [...prevState,props.newMessage]);
+      setMessages(prevState => [...prevState, props.newMessage]);
     } else if (props.newMessage && !props.selectedRoom) {
       getMessages();
     }

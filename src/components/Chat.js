@@ -123,11 +123,9 @@ export default function Chat(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId, dateTime) => {
-    await props?.socket?.emit("messages", roomId, page);
-    console.log("Get messages", roomId)
-
     await props?.socket?.emit("checkIn", roomId, dateTime, page);
     console.log("Check in to room", roomId)
+    console.log(`Request page ${page} of room ${roomId}`)
     setSelectedRoom(roomId);
     resetUnread(roomId);
   };
