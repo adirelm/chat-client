@@ -4,6 +4,7 @@ import Fab from "@material-ui/core/Fab";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
 import Paper from "@material-ui/core/Paper";
+import Button from '@material-ui/core/Button';
 import SendIcon from "@material-ui/icons/Send";
 import Divider from "@material-ui/core/Divider";
 import ListItem from "@material-ui/core/ListItem";
@@ -54,6 +55,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Conversation(props) {
+  const page = useRef(1);
   const classes = useStyles();
   const lastSender = useRef("");
   const lastMessageDate = useRef("");
@@ -67,34 +69,41 @@ export default function Conversation(props) {
   }, []);
 
   const getMessages = async () => {
-    await props?.socket.on("messages", async (messages) => {
-      setMessages(messages);
+    await props?.socket.on("messages", async (newMessages, page) => {
+      if(newMessages.length > 0)
+      setMessages(newMessages);
     });
   };
 
-  const addMessage = async (newMessage) => {
+  const sendMessage = async (newMessage) => {
     setTextValue("");
     newMessage.senderId = props.userId;
-    const newMessages = [...messages];
-    newMessages.push(newMessage);
-    setMessages(newMessages);
-  };
-  const sendMessage = async (newMessage) => {
+    // Add new message current user sent
+    setMessages(prevState => [...prevState, newMessage]);
     if (props?.socket) {
       await props?.socket.emit("newMessage", newMessage);
     }
   };
 
+  const loadPreviousMessages = async () => {
+    page.current = page.current + 1;
+    props.socket.emit('messages', page.current);
+  };
+
   useEffect(() => {
     setTextValue("");
     if (props.selectedRoom) {
+      page.current = 1;
+      setMessages([]);
+      // Initial get, bring messages of current room
       getMessages();
     }
   }, [props.selectedRoom]);
 
   useEffect(() => {
-    if (props.newMessage && props.selectedRoom) {
-      setMessages([...messages, props.newMessage]);
+    // Add new incoming message
+    if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
+      setMessages(prevState => [...prevState,props.newMessage]);
     } else if (props.newMessage && !props.selectedRoom) {
       getMessages();
     }
@@ -106,6 +115,9 @@ export default function Conversation(props) {
         <Grid container component={Paper} className={classes.chatSection}>
           <Grid item xs={9} className={classes.gridSize}>
             <List className={classes.messageArea}>
+              <Button variant="contained" disabled={!messages} onClick={async () => {
+                loadPreviousMessages();
+              }}>Load previous</Button>
               {messages?.map((data, index) => {
                 const fromMe = data.senderId === props.userId;
                 const sameSender = lastSender.current === data.senderId;
@@ -142,7 +154,7 @@ export default function Conversation(props) {
                         <ListItemText
                           align={fromMe ? "right" : "left"}
                           primary={data.body}
-                          secondary={data.unread? "unread" : ""}
+                          secondary={data.unread ? "unread" : ""}
                         ></ListItemText>
                       </Grid>
                       <Grid item xs={12}>
@@ -181,13 +193,12 @@ export default function Conversation(props) {
                 <Fab disabled={!textValue} color="primary" aria-label="add">
                   <SendIcon
                     onClick={async () => {
-                      const newMessage = {
+                      const message = {
                         roomId: props.selectedRoom,
                         body: textValue,
-                        createdAt: new moment().format('YYYY-MM-DD HH:mm:ss'), // after moment ? .utcOffset('+03')
+                        createdAt: new moment().format('YYYY-MM-DD HH:mm:ss'),
                       };
-                      await addMessage(newMessage);
-                      sendMessage(newMessage);
+                      await sendMessage(message);
                     }}
                   />
                 </Fab>

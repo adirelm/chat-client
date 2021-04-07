@@ -10,7 +10,6 @@ const ENDPOINT = "http://localhost:3001";
 const users = [1, 2, 3, 4, 5, 6, 7, 8]; // add user ids as necessary
 const random = Math.floor(Math.random() * users.length);
 const userId = users[random];
-console.log(`user ID: ${userId}`);
 
 const socketInit = io(ENDPOINT, { query: { userId: userId } });
 
@@ -35,6 +34,37 @@ export default function App() {
   const [socket] = useState(socketInit);
   const classes = useStyles();
   useEffect(() => {
+    // Error handling, built in events
+    socket.on('connect', () => {
+      console.log(`Client connected successfully - user ID: ${userId}`);
+    });
+    socket.on('connecting', () => {
+      console.log("Client is connecting");
+    });
+    socket.on('connect_failed', () => {
+      document.write("Sorry, there seems to be an issue with the connection");
+      console.log("Sorry, there seems to be an issue with the connection");
+    });
+    socket.on('reconnect', () => {
+      console.log("Client was reconnected successfully");
+    });
+    socket.on('reconnecting', () => {
+      console.log("Client is reconnecting");
+    });
+    socket.on('reconnect_failed', () => {
+      document.write("Sorry, there seems to be an issue with the connection");
+      console.log("Client's attempt to reconnect failed");
+    });
+    socket.on('error', (err) => {
+      document.write("Sorry, there seems to be an error");
+      console.log("Error from server", err);
+    });
+    socket.on('disconnect', () => {
+      console.log("Client was disconnected");
+    });
+    socket.on('message', (msg) => {
+      console.log("Message from server",msg);
+    });
     return () => {
       socket.disconnect();
     };

@@ -58,7 +58,8 @@ export default function Chat(props) {
   const getChat = async (roomId) => {
     props?.socket.emit("chat", roomId);
     props?.socket.on("chat", async (chat) => {
-    await shiftChats(chat);
+      if (chats[0].roomId !== chat.roomId) // If room is first in list, no need to shift chats
+        await shiftChats(chat);
     });
   };
 
@@ -71,17 +72,14 @@ export default function Chat(props) {
       }
     }
     updatedChats.unshift(chat);
-    // if(selectedRoom === chat.roomId) {
-    //   resetUnread(chat.roomId)
-    // }
     setChats(updatedChats);
   };
 
   const newMessageListener = async () => {
     activeListener.current = true;
-    console.log('Activate new message listener', chats)
     props.socket.on(`newMessage`, async (data) => {
-      activeListener.current = false;
+      if (data.senderId === props.userId)
+        activeListener.current = false;
       if (data.senderId !== props.userId) {
         setNewMessage(data);
       }
@@ -89,7 +87,7 @@ export default function Chat(props) {
     });
   };
 
-
+  // Upon checking in to room, unread messages are reset
   const resetUnread = async (roomId) => {
     const updatedChats = [...chats];
     for (let chat of updatedChats) {
@@ -107,9 +105,10 @@ export default function Chat(props) {
       return roomName.includes(searchValue.toLowerCase());
     });
     setFilteredChats(updatedFilteredChats);
-  }
+  };
+
   useEffect(() => {
-     filterSearch();
+    filterSearch();
   }, [searchValue, chats]);
 
   useEffect(() => {
@@ -120,24 +119,28 @@ export default function Chat(props) {
   useEffect(() => {
     if (chats.length > 0 && activeListener.current === false)
       newMessageListener(chats);
-  }, [chats,activeListener]);
+  }, [chats, activeListener]);
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId, dateTime) => {
+    await props?.socket?.emit("messages", roomId, page);
+    console.log("Get messages", roomId)
+
     await props?.socket?.emit("checkIn", roomId, dateTime, page);
+    console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
     resetUnread(roomId);
   };
 
   // Check out of room - update membership last read and status
   const checkOut = async (roomId, dateTime) => {
+    console.log('Check out of room', roomId);
     props?.socket.emit("checkOut", roomId, dateTime);
   };
 
   const getChats = async () => {
     props?.socket.emit("chats");
     await props?.socket.on("chats", async (chats) => {
-      //setFilteredChats(chats);
       setChats(chats);
     });
   };
@@ -175,44 +178,46 @@ export default function Chat(props) {
               }}
             />
             <List>
-              {filteredChats.map((chat) => (
-                <ListItem
-                  button
-                  key={chat.roomId}
-                  selected={selectedRoom === chat.roomId}
-                  onClick={async () => {
-                    setSearchValue('');
-                    const currentTime = new moment().format(
-                      "YYYY-MM-DD HH:mm:ss"
-                    );
-                    if (selectedRoom) {
-                      await checkOut(selectedRoom, currentTime);
-                    }
-                    await checkIn(chat.roomId, currentTime);
-                  }}
-                >
-                  <ListItemIcon>
-                    <Avatar />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={chat.roomName}
-                    secondary={
-                      chat.sender && chat.body
-                        ? chat.sender +
-                        ":" +
-                        chat.body
-                        : ""
-                    }
-                  />
-                  <Badge
-                    badgeContent={chat.unreadMessages}
-                    visibility={(!!chat.unreadMessages).toString()}
-                    color="primary"
+              {filteredChats.map((chat) => {
+                return (
+                  <ListItem
+                    button
+                    key={chat.roomId}
+                    selected={selectedRoom === chat.roomId}
+                    onClick={async () => {
+                      setSearchValue('');
+                      const currentTime = new moment().format(
+                        "YYYY-MM-DD HH:mm:ss"
+                      );
+                      if (selectedRoom && selectedRoom !== chat.roomId)
+                        await checkOut(selectedRoom, currentTime);
+                      if (!selectedRoom || selectedRoom !== chat.roomId)
+                        checkIn(chat.roomId, currentTime);
+                    }}
                   >
-                    <ChatBubbleOutlineIcon></ChatBubbleOutlineIcon>
-                  </Badge>
-                </ListItem>
-              ))}
+                    <ListItemIcon>
+                      <Avatar />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={chat.roomName}
+                      secondary={
+                        chat.sender && chat.body
+                          ? chat.sender +
+                          ":" +
+                          chat.body
+                          : ""
+                      }
+                    />
+                    <Badge
+                      badgeContent={chat.unreadMessages}
+                      invisible={chat.unreadMessages > 0 ? false : true}
+                      color="primary"
+                    >
+                      <ChatBubbleOutlineIcon></ChatBubbleOutlineIcon>
+                    </Badge>
+                  </ListItem>
+                )
+              })}
             </List>
           </Grid>
           <Divider />
