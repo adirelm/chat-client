@@ -75,7 +75,7 @@ export default function Chat(props) {
 
   const newMessageListener = async () => {
     activeListener.current = true;
-    props.socket.on(`newMessage`, async (data) => {
+    props?.socket.on(`newMessage`, async (data) => {
       if (data.senderId === props.userId)
         activeListener.current = false;
       if (data.senderId !== props.userId) {

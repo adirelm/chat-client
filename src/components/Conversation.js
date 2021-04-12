@@ -69,7 +69,7 @@ export default function Conversation(props) {
   }, []);
 
   const getMessages = async () => {
-    await props?.socket.on("messages", async (newMessages, page) => {
+    await props.socket.on("messages", async (newMessages, page) => {
       if (page > 1)
         setMessages(prevState => [...newMessages, ...prevState]);
       else
@@ -84,7 +84,7 @@ export default function Conversation(props) {
     // Add new message current user sent
     setMessages(prevState => [...prevState, newMessage]);
     if (props?.socket) {
-      await props?.socket.emit("newMessage", newMessage, (data)=> {});
+      await props.socket.emit("newMessage", newMessage, (ack)=> {console.log(ack)});
     }
   };
 
