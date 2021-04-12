@@ -84,7 +84,7 @@ export default function Conversation(props) {
     // Add new message current user sent
     setMessages(prevState => [...prevState, newMessage]);
     if (props?.socket) {
-      await props?.socket.emit("newMessage", newMessage);
+      await props?.socket.emit("newMessage", newMessage, (data)=> {});
     }
   };
 
@@ -204,7 +204,6 @@ export default function Conversation(props) {
                       const message = {
                         roomId: props.selectedRoom,
                         body: textValue,
-                        createdAt: new moment().format('YYYY-MM-DD HH:mm:ss'),
                       };
                       await sendMessage(message);
                     }}

@@ -1,4 +1,3 @@
-import moment from "moment";
 import Conversation from "./Conversation.js";
 import { makeStyles } from "@material-ui/core/styles";
 import React, { useState, useEffect, useRef } from "react";
@@ -58,7 +57,6 @@ export default function Chat(props) {
   const getChat = async (roomId) => {
     props?.socket.emit("chat", roomId);
     props?.socket.on("chat", async (chat) => {
-      if (chats[0].roomId !== chat.roomId) // If room is first in list, no need to shift chats
         await shiftChats(chat);
     });
   };
@@ -117,23 +115,24 @@ export default function Chat(props) {
   }, [props?.socket]);
 
   useEffect(() => {
-    if (chats.length > 0 && activeListener.current === false)
+    if (chats.length > 0 && activeListener.current === false) {
       newMessageListener(chats);
+    }
   }, [chats, activeListener]);
 
   // Check into room - update membership status, update unread messages and badge
-  const checkIn = async (roomId, dateTime) => {
-    await props?.socket?.emit("checkIn", roomId, dateTime, page);
+  const checkIn = async (roomId) => {
+    await props?.socket?.emit("checkIn", roomId);
     console.log("Check in to room", roomId)
-    console.log(`Request page ${page} of room ${roomId}`)
+    console.log(`Request page 1 of room ${roomId}`)
     setSelectedRoom(roomId);
     resetUnread(roomId);
   };
 
   // Check out of room - update membership last read and status
-  const checkOut = async (roomId, dateTime) => {
+  const checkOut = async (roomId) => {
     console.log('Check out of room', roomId);
-    props?.socket.emit("checkOut", roomId, dateTime);
+    props?.socket.emit("checkOut", roomId);
   };
 
   const getChats = async () => {
@@ -184,13 +183,10 @@ export default function Chat(props) {
                     selected={selectedRoom === chat.roomId}
                     onClick={async () => {
                       setSearchValue('');
-                      const currentTime = new moment().format(
-                        "YYYY-MM-DD HH:mm:ss"
-                      );
                       if (selectedRoom && selectedRoom !== chat.roomId)
-                        await checkOut(selectedRoom, currentTime);
+                        await checkOut(selectedRoom);
                       if (!selectedRoom || selectedRoom !== chat.roomId)
-                        checkIn(chat.roomId, currentTime);
+                        checkIn(chat.roomId);
                     }}
                   >
                     <ListItemIcon>
