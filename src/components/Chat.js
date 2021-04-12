@@ -99,7 +99,7 @@ export default function Chat(props) {
   // Create array of chats that match the search value
   const filterSearch = async () => {
     const updatedFilteredChats = chats.filter((chat) => {
-      const roomName = chat.roomName.toLowerCase();
+      const roomName = chat.roomName?.toLowerCase() || '';
       return roomName.includes(searchValue.toLowerCase());
     });
     setFilteredChats(updatedFilteredChats);
