@@ -189,7 +189,7 @@ export default function Chat(props) {
                       <Avatar />
                     </ListItemIcon>
                     <ListItemText
-                      primary={chat.roomName+chat.roomId}
+                      primary={chat.roomName}
                       secondary={
                         chat.sender && chat.body
                           ? chat.sender +
@@ -222,7 +222,6 @@ export default function Chat(props) {
             selectedRoom={selectedRoom}
             userId={props.userId}
             socket={props.socket}
-            getChat={props.getChat}
           />
         </div>
       </main>

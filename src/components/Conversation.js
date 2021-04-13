@@ -206,8 +206,6 @@ export default function Conversation(props) {
                         body: textValue,
                       };
                       await sendMessage(message);
-                      const roomId = props.selectedRoom
-                      props.getChat(roomId);
                     }}
                   />
                 </Fab>
