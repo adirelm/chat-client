@@ -46,7 +46,6 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Chat(props) {
   const classes = useStyles();
-  const [page, setPage] = useState(1);
   const activeListener = useRef(false);
   const [chats, setChats] = useState([]);
   const [newMessage, setNewMessage] = useState();
@@ -54,9 +53,24 @@ export default function Chat(props) {
   const [selectedRoom, setSelectedRoom] = useState();
   const [filteredChats, setFilteredChats] = useState([]);
 
+  useEffect(() => {
+    filterSearch();
+  }, [searchValue, chats]);
+
+  useEffect(() => {
+    getChats();
+  }, [props?.socket]);
+
+  useEffect(() => {
+    if (chats.length > 0 && activeListener.current === false) {
+      newMessageListener(chats);
+    }
+  }, [chats]);
+
   const getChat = async (roomId) => {
     props?.socket.emit("chat", roomId);
     props?.socket.on("chat", async (chat) => {
+      console.log('Get chat',chat)
         await shiftChats(chat);
     });
   };
@@ -74,10 +88,9 @@ export default function Chat(props) {
   };
 
   const newMessageListener = async () => {
+    console.log('Listener on')
     activeListener.current = true;
-    props?.socket.on(`newMessage`, async (data) => {
-      if (data.senderId === props.userId)
-        activeListener.current = false;
+    props?.socket.on(`newMessage`, async (data,fn) => {
       if (data.senderId !== props.userId) {
         setNewMessage(data);
       }
@@ -105,21 +118,6 @@ export default function Chat(props) {
     setFilteredChats(updatedFilteredChats);
   };
 
-  useEffect(() => {
-    filterSearch();
-  }, [searchValue, chats]);
-
-  useEffect(() => {
-    getChats();
-    setPage(1);
-  }, [props?.socket]);
-
-  useEffect(() => {
-    if (chats.length > 0 && activeListener.current === false) {
-      newMessageListener(chats);
-    }
-  }, [chats, activeListener]);
-
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
     await props?.socket?.emit("checkIn", roomId);
@@ -136,8 +134,8 @@ export default function Chat(props) {
   };
 
   const getChats = async () => {
-    props?.socket.emit("chats");
     await props?.socket.on("chats", async (chats) => {
+      console.log('chats',chats)
       setChats(chats);
     });
   };
@@ -183,8 +181,6 @@ export default function Chat(props) {
                     selected={selectedRoom === chat.roomId}
                     onClick={async () => {
                       setSearchValue('');
-                      if (selectedRoom && selectedRoom !== chat.roomId)
-                        await checkOut(selectedRoom);
                       if (!selectedRoom || selectedRoom !== chat.roomId)
                         checkIn(chat.roomId);
                     }}
@@ -193,7 +189,7 @@ export default function Chat(props) {
                       <Avatar />
                     </ListItemIcon>
                     <ListItemText
-                      primary={chat.roomName}
+                      primary={chat.roomName+chat.roomId}
                       secondary={
                         chat.sender && chat.body
                           ? chat.sender +
@@ -226,6 +222,7 @@ export default function Chat(props) {
             selectedRoom={selectedRoom}
             userId={props.userId}
             socket={props.socket}
+            getChat={props.getChat}
           />
         </div>
       </main>

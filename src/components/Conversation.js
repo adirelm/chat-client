@@ -68,6 +68,29 @@ export default function Conversation(props) {
     }
   }, []);
 
+    // Open a channel to receive messages
+    useEffect(() => {
+      getMessages();
+    }, []);
+  
+    useEffect(() => {
+      setTextValue("");
+      if (props.selectedRoom) {
+        page.current = 1;
+        setMessages([]);
+      }
+    }, [props.selectedRoom]);
+  
+    useEffect(() => {
+      // Add new incoming message
+      if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
+        setMessages(prevState => [...prevState, props.newMessage]);
+      } else if (props.newMessage && !props.selectedRoom) {
+        getMessages();
+      }
+    }, [props.newMessage]);
+  
+
   const getMessages = async () => {
     await props.socket.on("messages", async (newMessages, page) => {
       if (page > 1)
@@ -93,29 +116,6 @@ export default function Conversation(props) {
     props.socket.emit('messages', props.selectedRoom, page.current);
     console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
-
-  // Open a channel to receive messages
-  useEffect(() => {
-    console.log('Initial get to receive messages')
-    getMessages();
-  }, []);
-
-  useEffect(() => {
-    setTextValue("");
-    if (props.selectedRoom) {
-      page.current = 1;
-      setMessages([]);
-    }
-  }, [props.selectedRoom]);
-
-  useEffect(() => {
-    // Add new incoming message
-    if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
-      setMessages(prevState => [...prevState, props.newMessage]);
-    } else if (props.newMessage && !props.selectedRoom) {
-      getMessages();
-    }
-  }, [props.newMessage]);
 
   if (props.selectedRoom)
     return (
@@ -206,6 +206,8 @@ export default function Conversation(props) {
                         body: textValue,
                       };
                       await sendMessage(message);
+                      const roomId = props.selectedRoom
+                      props.getChat(roomId);
                     }}
                   />
                 </Fab>
