@@ -47,6 +47,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Chat(props) {
   const classes = useStyles();
   const activeListener = useRef(false);
+  const userIdRef = useRef();
   const [chats, setChats] = useState([]);
   const [newMessage, setNewMessage] = useState();
   const [searchValue, setSearchValue] = useState("");
@@ -59,6 +60,7 @@ export default function Chat(props) {
 
   useEffect(() => {
     getChats();
+    getMe();
   }, [props?.socket]);
 
   useEffect(() => {
@@ -70,8 +72,15 @@ export default function Chat(props) {
   const getChat = async (roomId) => {
     props?.socket.emit("chat", roomId);
     props?.socket.on("chat", async (chat) => {
-      console.log('Get chat',chat)
-        await shiftChats(chat);
+      console.log('Get chat', chat)
+      await shiftChats(chat);
+    });
+  };
+
+  const getMe = async () => {
+    props?.socket.on("me", async (userId) => {
+      console.log('user ID', userId)
+      userIdRef.current = userId;
     });
   };
 
@@ -90,8 +99,8 @@ export default function Chat(props) {
   const newMessageListener = async () => {
     console.log('Listener on')
     activeListener.current = true;
-    props?.socket.on(`newMessage`, async (data,fn) => {
-      if (data.senderId !== props.userId) {
+    props?.socket.on(`newMessage`, async (data, fn) => {
+      if (data.senderId !== userIdRef.current) {
         setNewMessage(data);
       }
       await getChat(data.roomId);
@@ -135,7 +144,7 @@ export default function Chat(props) {
 
   const getChats = async () => {
     await props?.socket.on("chats", async (chats) => {
-      console.log('chats',chats)
+      console.log('chats', chats)
       setChats(chats);
     });
   };
@@ -220,7 +229,7 @@ export default function Chat(props) {
           <Conversation
             newMessage={newMessage}
             selectedRoom={selectedRoom}
-            userId={props.userId}
+            userId={userIdRef.current}
             socket={props.socket}
           />
         </div>
