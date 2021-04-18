@@ -45,9 +45,9 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Chat(props) {
+  const userIdRef = useRef();
   const classes = useStyles();
   const activeListener = useRef(false);
-  const userIdRef = useRef();
   const [chats, setChats] = useState([]);
   const [newMessage, setNewMessage] = useState();
   const [searchValue, setSearchValue] = useState("");
@@ -59,25 +59,25 @@ export default function Chat(props) {
   }, [searchValue, chats]);
 
   useEffect(() => {
-    getChats();
-    getMe();
-  }, [props?.socket]);
+    chatsListener();
+    getUserId();
+  }, []);
 
   useEffect(() => {
+    // New message listener should run only after chats are set
     if (chats.length > 0 && activeListener.current === false) {
-      newMessageListener(chats);
+      newMessageListener();
     }
   }, [chats]);
 
   const getChat = async (roomId) => {
     props?.socket.emit("chat", roomId);
-    props?.socket.on("chat", async (chat) => {
-      console.log('Get chat', chat)
+    props?.socket.once("chat", async (chat) => {
       await shiftChats(chat);
     });
   };
 
-  const getMe = async () => {
+  const getUserId = async () => {
     props?.socket.on("me", async (userId) => {
       console.log('user ID', userId)
       userIdRef.current = userId;
@@ -97,7 +97,6 @@ export default function Chat(props) {
   };
 
   const newMessageListener = async () => {
-    console.log('Listener on')
     activeListener.current = true;
     props?.socket.on(`newMessage`, async (data, fn) => {
       if (data.senderId !== userIdRef.current) {
@@ -142,7 +141,7 @@ export default function Chat(props) {
     props?.socket.emit("checkOut", roomId);
   };
 
-  const getChats = async () => {
+  const chatsListener = async () => {
     await props?.socket.on("chats", async (chats) => {
       console.log('chats', chats)
       setChats(chats);

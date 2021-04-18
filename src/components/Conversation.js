@@ -68,33 +68,33 @@ export default function Conversation(props) {
     }
   }, []);
 
-    // Open a channel to receive messages
-    useEffect(() => {
-      getMessages();
-    }, []);
-  
-    useEffect(() => {
-      setTextValue("");
-      if (props.selectedRoom) {
-        page.current = 1;
-        setMessages([]);
-      }
-    }, [props.selectedRoom]);
-  
-    useEffect(() => {
-      // Add new incoming message
-      if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
-        setMessages(prevState => [...prevState, props.newMessage]);
-      } else if (props.newMessage && !props.selectedRoom) {
-        getMessages();
-      }
-    }, [props.newMessage]);
-  
+  // Open a channel to receive messages
+  useEffect(() => {
+    messageListener();
+  }, []);
 
-  const getMessages = async () => {
+  useEffect(() => {
+    setTextValue("");
+    if (props.selectedRoom) {
+      page.current = 1;
+      //setMessages([]); //reset message 
+    }
+  }, [props.selectedRoom]);
+
+  useEffect(() => {
+    // Add new incoming message
+    if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
+      setMessages(prevState => [...prevState, props.newMessage]);
+    }
+  }, [props.newMessage]);
+
+
+  const messageListener = async () => {
     await props.socket.on("messages", async (newMessages, page) => {
-      if (page > 1)
+      if (page > 1) {
         setMessages(prevState => [...newMessages, ...prevState]);
+        console.log(`Received page ${page} of messages`, newMessages);
+      }
       else
         setMessages(newMessages);
       console.log(`Received page ${page} of messages`, newMessages);
@@ -107,7 +107,7 @@ export default function Conversation(props) {
     // Add new message current user sent
     setMessages(prevState => [...prevState, newMessage]);
     if (props?.socket) {
-      await props.socket.emit("newMessage", newMessage, (ack)=> {console.log(ack)});
+      await props.socket.emit("newMessage", newMessage, (ack) => {console.log(ack) });
     }
   };
 
@@ -127,7 +127,7 @@ export default function Conversation(props) {
                 loadPreviousMessages();
               }}>Load previous</Button>
               {messages?.map((data, index) => {
-                const fromMe = data.senderId === props.userId;
+                const fromMe = data?.senderId === props.userId;
                 const sameSender = lastSender.current === data.senderId;
                 lastSender.current = data.senderId;
                 const lastMessage = messages.length - 1 === index;
