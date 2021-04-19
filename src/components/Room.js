@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Chat(props) {
+export default function Room(props) {
   const userIdRef = useRef();
   const classes = useStyles();
   const activeListener = useRef(false);
