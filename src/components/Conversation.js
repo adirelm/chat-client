@@ -107,7 +107,8 @@ export default function Conversation(props) {
     setTextValue("");
     //newMessage.senderId = props.userId;
     // Add new message current user sent
-    setMessages(prevState => [...prevState, { ...newMessage, senderId: props.userId }]);
+    setMessages(prevState => [...prevState, { ...newMessage, sender: {id: props.userId }}]);
+    console.log('THE THING THATS FUCKING UP MY LIFE', { ...newMessage, sender: {id: props.userId }})
     if (props?.socket) {
       console.log('new message', newMessage);
       await props.socket.emit("newMessage", { message: newMessage }, (ack) => { console.log(ack) });
@@ -116,7 +117,7 @@ export default function Conversation(props) {
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
-    props.socket.emit('messages', { room: { roomId: props.selectedRoom }, page: { pageNumber: page.current } });
+    props.socket.emit('messages', { room: { id: props.selectedRoom }, page: { pageNumber: page.current } });
     console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
 
@@ -129,14 +130,14 @@ export default function Conversation(props) {
               <Button variant="contained" disabled={!messages} onClick={async () => {
                 loadPreviousMessages();
               }}>Load previous</Button>
-              {messages?.map((data, index) => {
-                const fromMe = data?.senderId === props.userId;
-                const sameSender = lastSender.current === data.senderId;
-                lastSender.current = data.senderId;
+              {messages?.map((message, index) => {
+                const fromMe = message?.sender.id === props.userId;
+                const sameSender = lastSender.current === message.sender.id;
+                lastSender.current = message.sender.id;
                 const lastMessage = messages.length - 1 === index;
                 const sameDate =
-                  lastMessageDate?.current === data.createdAt?.substring(0, 10);
-                lastMessageDate.current = data.createdAt?.substring(0, 10);
+                  lastMessageDate?.current === message.createdAt?.substring(0, 10);
+                lastMessageDate.current = message.createdAt?.substring(0, 10);
                 return (
                   <ListItem key={index}>
                     <Grid container>
@@ -149,7 +150,7 @@ export default function Conversation(props) {
                               ""
                             ) : (
                               <Moment format="MM/DD/YYYY">
-                                {moment(data.createdAt)}
+                                {moment(message.createdAt)}
                               </Moment>
                             )
                           }
@@ -157,15 +158,15 @@ export default function Conversation(props) {
                         <ListItemText
                           align={fromMe ? "right" : "left"}
                           primary={
-                            sameSender || fromMe ? "" : data.senderName
+                            sameSender || fromMe ? "" : message.sender.name
                           }
                         ></ListItemText>
                       </Grid>
                       <Grid item xs={12}>
                         <ListItemText
                           align={fromMe ? "right" : "left"}
-                          primary={data.body}
-                          secondary={data.unread ? "unread" : ""}
+                          primary={message.body}
+                          secondary={message.unread ? "unread" : ""}
                         ></ListItemText>
                       </Grid>
                       <Grid item xs={12}>
@@ -173,7 +174,7 @@ export default function Conversation(props) {
                           align={fromMe ? "right" : "left"}
                           secondary={
                             <Moment format="HH:mm">
-                              {moment(data.createdAt)}
+                              {moment(message.createdAt)}
                             </Moment>
                           }
                         ></ListItemText>

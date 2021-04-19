@@ -71,15 +71,16 @@ export default function Room(props) {
   }, [rooms]);
 
   const getRoom = async (roomId) => {
-    props?.socket.emit("room", { room: { roomId: roomId } });
+    props?.socket.emit("room", { room: { id: roomId } });
     props?.socket.once("room", async (data) => {
+      console.log('the room im receivin', data);
       await shiftRooms(data.room);
     });
   };
 
   const getUserId = async () => {
-    props?.socket.on("me", async (data) => {
-      const userId = data.user.userId
+    props?.socket.on("me", async (user) => {
+      const userId = user.id
       console.log('user ID', userId)
       userIdRef.current = userId;
     });
@@ -88,6 +89,8 @@ export default function Room(props) {
   const shiftRooms = async (room) => {
     let updatedRooms = [...rooms];
     for (let i = 0; i < rooms.length; i++) {
+      console.log('updatedRooms[i].id',updatedRooms[i].id);
+      console.log('updatedRooms',updatedRooms);
       if (updatedRooms[i].id === room.id) {
         updatedRooms.splice(i, 1);
         break;
@@ -129,7 +132,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { room: { roomId: roomId } });
+    await props?.socket?.emit("checkIn", { room: { id: roomId } });
     console.log("Check in to room", roomId)
     console.log(`Request page 1 of room ${roomId}`)
     setSelectedRoom(roomId);
@@ -201,8 +204,8 @@ export default function Room(props) {
                     <ListItemText
                       primary={room.name}
                       secondary={
-                        room.lastMessage.sender && room.lastMessage.body
-                          ? room.lastMessage.sender +
+                        room.lastMessage.sender.name && room.lastMessage.body
+                          ? room.lastMessage.sender.name +
                           ":" +
                           room.lastMessage.body
                           : ""
