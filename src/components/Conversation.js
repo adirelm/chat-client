@@ -90,7 +90,9 @@ export default function Conversation(props) {
 
 
   const messageListener = async () => {
-    await props.socket.on("messages", async (newMessages, page) => {
+    await props.socket.on("messages", async (data) => {
+      const newMessages = data.messages;
+      const page = data.page.pageNumber;
       if (page > 1) {
         setMessages(prevState => [...newMessages, ...prevState]);
         console.log(`Received page ${page} of messages`, newMessages);
@@ -103,17 +105,18 @@ export default function Conversation(props) {
 
   const sendMessage = async (newMessage) => {
     setTextValue("");
-    newMessage.senderId = props.userId;
+    //newMessage.senderId = props.userId;
     // Add new message current user sent
-    setMessages(prevState => [...prevState, newMessage]);
+    setMessages(prevState => [...prevState, { ...newMessage, senderId: props.userId }]);
     if (props?.socket) {
-      await props.socket.emit("newMessage", newMessage, (ack) => {console.log(ack) });
+      console.log('new message', newMessage);
+      await props.socket.emit("newMessage", { message: newMessage }, (ack) => { console.log(ack) });
     }
   };
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
-    props.socket.emit('messages', props.selectedRoom, page.current);
+    props.socket.emit('messages', { room: { roomId: props.selectedRoom }, page: { pageNumber: page.current } });
     console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
 

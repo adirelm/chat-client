@@ -48,87 +48,88 @@ export default function Chat(props) {
   const userIdRef = useRef();
   const classes = useStyles();
   const activeListener = useRef(false);
-  const [chats, setChats] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [newMessage, setNewMessage] = useState();
   const [searchValue, setSearchValue] = useState("");
   const [selectedRoom, setSelectedRoom] = useState();
-  const [filteredChats, setFilteredChats] = useState([]);
+  const [filteredRooms, setFilteredRooms] = useState([]);
 
   useEffect(() => {
     filterSearch();
-  }, [searchValue, chats]);
+  }, [searchValue, rooms]);
 
   useEffect(() => {
-    chatsListener();
+    roomsListener();
     getUserId();
   }, []);
 
   useEffect(() => {
-    // New message listener should run only after chats are set
-    if (chats.length > 0 && activeListener.current === false) {
+    // New message listener should run only after rooms are set
+    if (rooms.length > 0 && activeListener.current === false) {
       newMessageListener();
     }
-  }, [chats]);
+  }, [rooms]);
 
-  const getChat = async (roomId) => {
-    props?.socket.emit("chat", roomId);
-    props?.socket.once("chat", async (chat) => {
-      await shiftChats(chat);
+  const getRoom = async (roomId) => {
+    props?.socket.emit("room", { room: { roomId: roomId } });
+    props?.socket.once("room", async (data) => {
+      await shiftRooms(data.room);
     });
   };
 
   const getUserId = async () => {
-    props?.socket.on("me", async (userId) => {
+    props?.socket.on("me", async (data) => {
+      const userId = data.user.userId
       console.log('user ID', userId)
       userIdRef.current = userId;
     });
   };
 
-  const shiftChats = async (chat) => {
-    let updatedChats = [...chats];
-    for (let i = 0; i < chats.length; i++) {
-      if (updatedChats[i].roomId === chat.roomId) {
-        updatedChats.splice(i, 1);
+  const shiftRooms = async (room) => {
+    let updatedRooms = [...rooms];
+    for (let i = 0; i < rooms.length; i++) {
+      if (updatedRooms[i].id === room.id) {
+        updatedRooms.splice(i, 1);
         break;
       }
     }
-    updatedChats.unshift(chat);
-    setChats(updatedChats);
+    updatedRooms.unshift(room);
+    setRooms(updatedRooms);
   };
 
   const newMessageListener = async () => {
     activeListener.current = true;
     props?.socket.on(`newMessage`, async (data, fn) => {
-      if (data.senderId !== userIdRef.current) {
+      if (data.message.sender.id !== userIdRef.current) {
         setNewMessage(data);
       }
-      await getChat(data.roomId);
+      await getRoom(data.message.room.id);
     });
   };
 
   // Upon checking in to room, unread messages are reset
   const resetUnread = async (roomId) => {
-    const updatedChats = [...chats];
-    for (let chat of updatedChats) {
-      if (chat.roomId === roomId) {
-        chat.unreadMessages = 0;
+    const updatedRooms = [...rooms];
+    for (let room of updatedRooms) {
+      if (room.id === roomId) {
+        room.unreadMessages = 0;
       }
     }
-    setChats(updatedChats);
+    setRooms(updatedRooms);
   };
 
-  // Create array of chats that match the search value
+  // Create array of rooms that match the search value
   const filterSearch = async () => {
-    const updatedFilteredChats = chats.filter((chat) => {
-      const roomName = chat.roomName?.toLowerCase() || '';
+    const updatedFilteredRooms = rooms.filter((room) => {
+      const roomName = room.name?.toLowerCase() || '';
       return roomName.includes(searchValue.toLowerCase());
     });
-    setFilteredChats(updatedFilteredChats);
+    setFilteredRooms(updatedFilteredRooms);
   };
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", roomId);
+    await props?.socket?.emit("checkIn", { room: { roomId: roomId } });
     console.log("Check in to room", roomId)
     console.log(`Request page 1 of room ${roomId}`)
     setSelectedRoom(roomId);
@@ -138,13 +139,14 @@ export default function Chat(props) {
   // Check out of room - update membership last read and status
   const checkOut = async (roomId) => {
     console.log('Check out of room', roomId);
-    props?.socket.emit("checkOut", roomId);
+    props?.socket.emit("checkOut", { room: { id: roomId } });
   };
 
-  const chatsListener = async () => {
-    await props?.socket.on("chats", async (chats) => {
-      console.log('chats', chats)
-      setChats(chats);
+  const roomsListener = async () => {
+    await props?.socket.on("rooms", async (data) => {
+      const rooms = data.rooms;
+      console.log('rooms', rooms)
+      setRooms(rooms);
     });
   };
 
@@ -181,34 +183,34 @@ export default function Chat(props) {
               }}
             />
             <List>
-              {filteredChats.map((chat) => {
+              {filteredRooms.map((room) => {
                 return (
                   <ListItem
                     button
-                    key={chat.roomId}
-                    selected={selectedRoom === chat.roomId}
+                    key={room.id}
+                    selected={selectedRoom === room.id}
                     onClick={async () => {
                       setSearchValue('');
-                      if (!selectedRoom || selectedRoom !== chat.roomId)
-                        checkIn(chat.roomId);
+                      if (!selectedRoom || selectedRoom !== room.id)
+                        checkIn(room.id);
                     }}
                   >
                     <ListItemIcon>
                       <Avatar />
                     </ListItemIcon>
                     <ListItemText
-                      primary={chat.roomName}
+                      primary={room.name}
                       secondary={
-                        chat.sender && chat.body
-                          ? chat.sender +
+                        room.lastMessage.sender && room.lastMessage.body
+                          ? room.lastMessage.sender +
                           ":" +
-                          chat.body
+                          room.lastMessage.body
                           : ""
                       }
                     />
                     <Badge
-                      badgeContent={chat.unreadMessages}
-                      invisible={chat.unreadMessages > 0 ? false : true}
+                      badgeContent={room.unreadMessages}
+                      invisible={room.unreadMessages > 0 ? false : true}
                       color="primary"
                     >
                       <ChatBubbleOutlineIcon></ChatBubbleOutlineIcon>
