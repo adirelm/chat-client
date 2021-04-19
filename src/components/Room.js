@@ -103,7 +103,7 @@ export default function Room(props) {
       if (data.message.sender.id !== userIdRef.current) {
         setNewMessage(data);
       }
-      await getRoom(data.message.room.id);
+      await getRoom(data.message.roomId);
     });
   };
 
