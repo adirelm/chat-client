@@ -88,10 +88,9 @@ export default function Conversation(props) {
     }
   }, [props.newMessage]);
 
-
   const messageListener = async () => {
     await props.socket.on("messages", async (data) => {
-      const newMessages = data.messages;
+      const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
       const maxPages = data.page.maxPages;
       if (page > 1) {

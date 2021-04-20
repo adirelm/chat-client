@@ -74,7 +74,7 @@ export default function Room(props) {
     props?.socket.emit("room", { roomId: roomId }, (ack) => console.log(ack));
     props?.socket.once("room", async (data) => {
       console.log('the room im receivin', data);
-      await shiftRooms(data.room);
+      await shiftRooms(data);
     });
   };
 
@@ -86,7 +86,7 @@ export default function Room(props) {
     });
   };
 
-  const shiftRooms = (room) => {
+  const shiftRooms = async (room) => {
     let updatedRooms = [...rooms];
     for (let i = 0; i < rooms.length; i++) {
       if (updatedRooms[i].id === room.id) {
@@ -101,10 +101,10 @@ export default function Room(props) {
   const newMessageListener = async () => {
     activeListener.current = true;
     props?.socket.on(`newMessage`, async (data, fn) => {
-      if (data.message.sender.id !== userIdRef.current) {
+      if (data.sender.id !== userIdRef.current) {
         setNewMessage(data);
       }
-      await getRoom(data.message.roomId);
+      await getRoom(data.roomId);
     });
   };
 
@@ -145,7 +145,7 @@ export default function Room(props) {
 
   const roomsListener = async () => {
     await props?.socket.on("rooms", async (data) => {
-      const rooms = data.rooms;
+      const rooms = data.data;
       console.log('rooms', rooms)
       setRooms(rooms);
     });
