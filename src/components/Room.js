@@ -71,7 +71,7 @@ export default function Room(props) {
   }, [rooms]);
 
   const getRoom = async (roomId) => {
-    props?.socket.emit("room", { room: { id: roomId } });
+    props?.socket.emit("room", { roomId: roomId }, (ack) => console.log(ack));
     props?.socket.once("room", async (data) => {
       console.log('the room im receivin', data);
       await shiftRooms(data.room);
@@ -86,11 +86,9 @@ export default function Room(props) {
     });
   };
 
-  const shiftRooms = async (room) => {
+  const shiftRooms = (room) => {
     let updatedRooms = [...rooms];
     for (let i = 0; i < rooms.length; i++) {
-      console.log('updatedRooms[i].id',updatedRooms[i].id);
-      console.log('updatedRooms',updatedRooms);
       if (updatedRooms[i].id === room.id) {
         updatedRooms.splice(i, 1);
         break;
@@ -132,7 +130,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { room: { id: roomId } });
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log(ack));
     console.log("Check in to room", roomId)
     console.log(`Request page 1 of room ${roomId}`)
     setSelectedRoom(roomId);
@@ -142,7 +140,7 @@ export default function Room(props) {
   // Check out of room - update membership last read and status
   const checkOut = async (roomId) => {
     console.log('Check out of room', roomId);
-    props?.socket.emit("checkOut", { room: { id: roomId } });
+    props?.socket.emit("checkOut", { roomId: roomId }, (ack) => console.log(ack));
   };
 
   const roomsListener = async () => {
