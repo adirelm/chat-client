@@ -79,8 +79,11 @@ export default function Room(props) {
 
   const getUserId = async () => {
     props?.socket.on("me", async (user) => {
-      console.log('userId:', user.id, 'userName:', user.name, 'meta:', user.meta);
+      console.log('userId:', user.id, 'userName:', user.name);
       userIdRef.current = user.id;
+    });
+    props?.socket.on("forIntegration", async (meta) => {
+      console.log('meta:', meta);
     });
   };
 
