@@ -73,16 +73,14 @@ export default function Room(props) {
   const getRoom = async (roomId) => {
     props?.socket.emit("room", { roomId: roomId }, (ack) => console.log(ack));
     props?.socket.once("room", async (data) => {
-      console.log('the room im receivin', data);
       await shiftRooms(data);
     });
   };
 
   const getUserId = async () => {
     props?.socket.on("me", async (user) => {
-      const userId = user.id
-      console.log('user ID', userId)
-      userIdRef.current = userId;
+      console.log('userId:', user.id, 'userName:', user.name);
+      userIdRef.current = user.id;
     });
   };
 
