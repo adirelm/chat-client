@@ -73,6 +73,7 @@ export default function Room(props) {
   const getRoom = async (roomId) => {
     props?.socket.emit("room", { roomId: roomId }, (ack) => console.log(ack));
     props?.socket.once("room", async (data) => {
+      console.log('get room data',data)
       await shiftRooms(data);
     });
   };
@@ -133,7 +134,6 @@ export default function Room(props) {
   const checkIn = async (roomId) => {
     await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log(ack));
     console.log("Check in to room", roomId)
-    console.log(`Request page 1 of room ${roomId}`)
     setSelectedRoom(roomId);
     resetUnread(roomId);
   };
