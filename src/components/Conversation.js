@@ -109,7 +109,7 @@ export default function Conversation(props) {
     setMessages(prevState => [...prevState, { ...newMessage, sender: { id: props.userId } }]);
     if (props?.socket) {
       await props.socket.emit("newMessage", newMessage, (ack) => {
-        props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log(ack));
+        props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log('room ack',ack));
         console.log('newMessageRoom:',ack) });
     }
   };
@@ -130,6 +130,7 @@ export default function Conversation(props) {
                 loadPreviousMessages();
               }}>Load previous</Button>
               {messages?.map((message, index) => {
+                console.log('sentBY ME',message.sentByMe);
                 const fromMe = message?.sender.id === props.userId;
                 const sameSender = lastSender.current === message.sender.id;
                 lastSender.current = message.sender.id;
@@ -155,22 +156,22 @@ export default function Conversation(props) {
                           }
                         ></ListItemText>
                         <ListItemText
-                          align={fromMe ? "right" : "left"}
+                          align={message.sentByMe ? "right" : "left"}
                           primary={
-                            sameSender || fromMe ? "" : message.sender.name
+                            sameSender || message.sentByMe ? "" : message.sender.name
                           }
                         ></ListItemText>
                       </Grid>
                       <Grid item xs={12}>
                         <ListItemText
-                          align={fromMe ? "right" : "left"}
+                          align={message.sentByMe ? "right" : "left"}
                           primary={message.body}
                           secondary={message.unread ? "unread" : ""}
                         ></ListItemText>
                       </Grid>
                       <Grid item xs={12}>
                         <ListItemText
-                          align={fromMe ? "right" : "left"}
+                          align={message.sentByMe ? "right" : "left"}
                           secondary={
                             <Moment format="HH:mm">
                               {moment(message.createdAt)}
@@ -207,6 +208,7 @@ export default function Conversation(props) {
                       const message = {
                         roomId: props.selectedRoom,
                         body: textValue,
+                        sentByMe: true,
                       };
                       await sendMessage(message);
                     }}

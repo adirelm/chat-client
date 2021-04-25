@@ -109,6 +109,7 @@ export default function Room(props) {
     activeListener.current = true;
     props?.socket.on(`newMessage`, async (data, fn) => {
       if (data.sender.id !== userIdRef.current) {
+        console.log('newMessage',data)
         setNewMessage(data);
       }
     });
