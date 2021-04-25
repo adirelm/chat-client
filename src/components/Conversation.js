@@ -130,8 +130,6 @@ export default function Conversation(props) {
                 loadPreviousMessages();
               }}>Load previous</Button>
               {messages?.map((message, index) => {
-                console.log('sentBY ME',message.sentByMe);
-                const fromMe = message?.sender.id === props.userId;
                 const sameSender = lastSender.current === message.sender.id;
                 lastSender.current = message.sender.id;
                 const lastMessage = messages.length - 1 === index;
