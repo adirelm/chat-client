@@ -48,6 +48,7 @@ export default function Room(props) {
   const userIdRef = useRef();
   const classes = useStyles();
   const activeListener = useRef(false);
+  const [room, setRoom] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [newMessage, setNewMessage] = useState();
   const [searchValue, setSearchValue] = useState("");
@@ -60,7 +61,8 @@ export default function Room(props) {
 
   useEffect(() => {
     roomsListener();
-    getUserId();
+    roomListener();
+    getUser();
   }, []);
 
   useEffect(() => {
@@ -70,22 +72,28 @@ export default function Room(props) {
     }
   }, [rooms]);
 
-  const getRoom = async (roomId) => {
-    props?.socket.emit("room", { roomId: roomId }, (ack) => console.log(ack));
-    props?.socket.once("room", async (data) => {
-      console.log('get room data',data)
-      await shiftRooms(data);
+
+  useEffect(() => {
+    if (room != null) {
+      shiftRooms();
+    }
+  }, [room])
+
+  const roomListener = async () => {
+    props?.socket.on("room", async (data) => { //on instead of once
+      setRoom(data)
     });
   };
 
-  const getUserId = async () => {
+  const getUser = async () => {
     props?.socket.on("me", async (user) => {
       console.log('userId:', user.id, 'userName:', user.name, 'meta', user.meta);
       userIdRef.current = user.id;
     });
   };
 
-  const shiftRooms = async (room) => {
+  // Shift rooms after room is updated
+  const shiftRooms = async () => {
     let updatedRooms = [...rooms];
     for (let i = 0; i < rooms.length; i++) {
       if (updatedRooms[i].id === room.id) {
@@ -103,7 +111,6 @@ export default function Room(props) {
       if (data.sender.id !== userIdRef.current) {
         setNewMessage(data);
       }
-      await getRoom(data.roomId);
     });
   };
 
@@ -121,7 +128,7 @@ export default function Room(props) {
   // Create array of rooms that match the search value
   const filterSearch = async () => {
     const updatedFilteredRooms = rooms.filter((room) => {
-      const roomName = room.name?.toLowerCase() || '';
+      const roomName = room?.name?.toLowerCase() || '';
       return roomName.includes(searchValue.toLowerCase());
     });
     setFilteredRooms(updatedFilteredRooms);
@@ -129,7 +136,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log(ack));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('ack of check in', ack));
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
     resetUnread(roomId);
@@ -137,16 +144,15 @@ export default function Room(props) {
 
   // Check out of room - update membership last read and status
   const checkOut = async (roomId) => {
-    console.log('Check out of room', roomId);
     props?.socket.emit("checkOut", { roomId: roomId }, (ack) => console.log(ack));
   };
 
   const roomsListener = async () => {
     await props?.socket.on("rooms", async (data) => {
       const rooms = data.data;
-      console.log('rooms', rooms)
       setRooms(rooms);
     });
+
   };
 
   return (
@@ -200,7 +206,7 @@ export default function Room(props) {
                     <ListItemText
                       primary={room.name}
                       secondary={
-                        room.lastMessage.sender.name && room.lastMessage.body
+                        room.lastMessage
                           ? room.lastMessage.sender.name +
                           ":" +
                           room.lastMessage.body

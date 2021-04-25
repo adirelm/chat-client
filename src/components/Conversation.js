@@ -77,7 +77,6 @@ export default function Conversation(props) {
     setTextValue("");
     if (props.selectedRoom) {
       page.current = 1;
-      //setMessages([]); //reset message 
     }
   }, [props.selectedRoom]);
 
@@ -109,7 +108,9 @@ export default function Conversation(props) {
     // Add new message current user sent
     setMessages(prevState => [...prevState, { ...newMessage, sender: { id: props.userId } }]);
     if (props?.socket) {
-      await props.socket.emit("newMessage", newMessage, (ack) => console.log(ack));
+      await props.socket.emit("newMessage", newMessage, (ack) => {
+        props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log(ack));
+        console.log('newMessageRoom:',ack) });
     }
   };
 
