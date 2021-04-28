@@ -91,14 +91,15 @@ export default function Conversation(props) {
     await props.socket.on("messages", async (data) => {
       const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
-      const maxPages = data.page.maxPages;
-      if (page > 1) {
+      const totalPages = data.page.totalPages;
+      console.log('all the data',data);
+      if (pageNumber > 1) {
         setMessages(prevState => [...newMessages, ...prevState]);
-        console.log(`Received page ${pageNumber}/${maxPages} of messages`, newMessages);
+        console.log(`Received page ${pageNumber}/${totalPages} of messages`, newMessages);
       }
       else {
         setMessages(newMessages);
-        console.log(`Received page ${pageNumber}/${maxPages} of messages`, newMessages);
+        console.log(`Received page ${pageNumber}/${totalPages} of messages`, newMessages);
       }
     });
   };
