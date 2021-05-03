@@ -64,7 +64,7 @@ export default function App() {
   useEffect(() => {
 
     socket.on('connect', () => {
-      console.log(`Client connected successfully`);
+      console.log(`Client connected successfully`,socket);
     });
 
     socket.on('connecting', () => {
@@ -73,7 +73,6 @@ export default function App() {
 
     socket.on('connect_failed', () => {
       document.write("Sorry, there seems to be an issue with the connection");
-      console.log("Sorry, there seems to be an issue with the connection");
     });
 
     socket.on('reconnect', () => {
@@ -94,8 +93,8 @@ export default function App() {
       console.log("Error from server", err);
     });
 
-    socket.on('disconnect', () => {
-      console.log("Client was disconnected");
+    socket.on('disconnect', (reason) => {
+      console.log("Client was disconnected",reason);
     });
 
     socket.on('message', (msg) => {

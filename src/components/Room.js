@@ -109,7 +109,7 @@ export default function Room(props) {
     activeListener.current = true;
     props?.socket.on(`newMessage`, async (data, fn) => {
       if (data.sender.id !== userIdRef.current) {
-        console.log('newMessage',data)
+        console.log('newMessage', data)
         setNewMessage(data);
       }
     });
@@ -137,7 +137,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('ack of check in', ack,ack.data));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('ack of check in', ack, ack.data));
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
     resetUnread(roomId);
@@ -152,6 +152,7 @@ export default function Room(props) {
     await props?.socket.on("rooms", async (data) => {
       const rooms = data.data;
       setRooms(rooms);
+      console.log('rooms', rooms)
     });
 
   };
@@ -190,6 +191,13 @@ export default function Room(props) {
             />
             <List>
               {filteredRooms.map((room) => {
+                let lastMessage = '';
+                if(room.lastMessage) {
+                  lastMessage = room.lastMessage.sender.name+': '+room.lastMessage.body;
+                  lastMessage = (lastMessage).length > 12 ?
+                  lastMessage.slice(0,16)+'...' : lastMessage
+                }
+                
                 return (
                   <ListItem
                     button
@@ -207,11 +215,7 @@ export default function Room(props) {
                     <ListItemText
                       primary={room.name}
                       secondary={
-                        room.lastMessage
-                          ? room.lastMessage.sender.name +
-                          ":" +
-                          room.lastMessage.body
-                          : ""
+                        lastMessage
                       }
                     />
                     <Badge
