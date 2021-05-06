@@ -88,6 +88,9 @@ export default function Conversation(props) {
   }, [props.newMessage]);
 
   const messageListener = async () => {
+    await props.socket.on('unreadMessages', async (data)=> {
+      console.log(data)
+    })
     await props.socket.on("messages", async (data) => {
       const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
@@ -117,7 +120,8 @@ export default function Conversation(props) {
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
-    props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current }, (ack) => console.log(ack));
+    props.socket.emit('unreadMessages', { roomId: props.selectedRoom, firstCheckInTimeStamp: props.firstCheckInTimeStamp  }, (ack) => console.log(ack));
+   // props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current, firstCheckInTimeStamp: props.firstCheckInTimeStamp  }, (ack) => console.log(ack));
     console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
 

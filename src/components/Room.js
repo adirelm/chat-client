@@ -46,6 +46,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Room(props) {
   const userIdRef = useRef();
+  const firstCheckInRef = useRef();
   const classes = useStyles();
   const activeListener = useRef(false);
   const [room, setRoom] = useState(null);
@@ -138,6 +139,7 @@ export default function Room(props) {
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
     await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('ack of check in', ack, ack.data));
+    firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
     resetUnread(roomId);
@@ -192,12 +194,11 @@ export default function Room(props) {
             <List>
               {filteredRooms.map((room) => {
                 let lastMessage = '';
-                if(room.lastMessage) {
-                  lastMessage = room.lastMessage.sender.name+': '+room.lastMessage.body;
+                if (room.lastMessage) {
+                  lastMessage = room.lastMessage.sender.name + ': ' + room.lastMessage.body;
                   lastMessage = (lastMessage).length > 12 ?
-                  lastMessage.slice(0,16)+'...' : lastMessage
+                    lastMessage.slice(0, 16) + '...' : lastMessage
                 }
-                
                 return (
                   <ListItem
                     button
@@ -226,7 +227,7 @@ export default function Room(props) {
                       <ChatBubbleOutlineIcon></ChatBubbleOutlineIcon>
                     </Badge>
                   </ListItem>
-                )
+                );
               })}
             </List>
           </Grid>
@@ -242,6 +243,7 @@ export default function Room(props) {
             selectedRoom={selectedRoom}
             userId={userIdRef.current}
             socket={props.socket}
+            firstCheckInRef={firstCheckInRef.current}
           />
         </div>
       </main>
