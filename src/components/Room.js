@@ -138,7 +138,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('ack of check in', ack, ack.data));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Ack of check in', ack, ack.data));
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);

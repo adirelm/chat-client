@@ -95,7 +95,7 @@ export default function Conversation(props) {
       const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
       const totalPages = data.page.totalPages;
-      console.log('all the data',data);
+      console.log('Upon requesting messages',data);
       if (pageNumber > 1) {
         setMessages(prevState => [...newMessages, ...prevState]);
         console.log(`Received page ${pageNumber}/${totalPages} of messages`, newMessages);
