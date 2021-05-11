@@ -88,14 +88,14 @@ export default function Conversation(props) {
   }, [props.newMessage]);
 
   const messageListener = async () => {
-    await props.socket.on('unreadMessages', async (data)=> {
+    await props.socket.on('unreadMessages', async (data) => {
       console.log(data)
     })
     await props.socket.on("messages", async (data) => {
       const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
       const totalPages = data.page.totalPages;
-      console.log('Upon requesting messages',data);
+      console.log('Upon requesting messages', data);
       if (pageNumber > 1) {
         setMessages(prevState => [...newMessages, ...prevState]);
         console.log(`Received page ${pageNumber}/${totalPages} of messages`, newMessages);
@@ -110,18 +110,17 @@ export default function Conversation(props) {
   const sendMessage = async (newMessage) => {
     setTextValue("");
     // Add new message current user sent
-    setMessages(prevState => [...prevState, { ...newMessage, sender: { id: props.userId } }]);
+    setMessages(prevState => [...prevState, { ...newMessage, sentByMe: true, sender: { id: props.userId } }]);
     if (props?.socket) {
-      await props.socket.emit("newMessage", newMessage, (ack) => {
-        props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log('room ack',ack));
-        console.log('newMessageRoom:',ack) });
+      await props.socket.emit("newMessage", newMessage, (ack) => { console.log('Emit message ack',ack) });
+      props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log('Request room ack', ack));
     }
   };
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
-    const firstCheckInTimeStamp  = props.firstCheckInRef;
-   props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current, firstCheckInTimeStamp: firstCheckInTimeStamp  }, (ack) => console.log(ack));
+    const firstCheckInTimeStamp = props.firstCheckInRef;
+    props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current, firstCheckInTimeStamp: firstCheckInTimeStamp }, (ack) => console.log('Emit messages ack',ack));
     console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
 
@@ -211,7 +210,6 @@ export default function Conversation(props) {
                       const message = {
                         roomId: props.selectedRoom,
                         body: textValue,
-                        sentByMe: true,
                       };
                       await sendMessage(message);
                     }}

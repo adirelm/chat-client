@@ -82,6 +82,7 @@ export default function Room(props) {
 
   const roomListener = async () => {
     props?.socket.on("room", async (data) => { //on instead of once
+      console.log('room',data)
       setRoom(data)
     });
   };
@@ -108,12 +109,14 @@ export default function Room(props) {
 
   const newMessageListener = async () => {
     activeListener.current = true;
-    props?.socket.on(`newMessage`, async (data, fn) => {
+    await props?.socket.on(`newMessage`, async (data) => {
       if (data.sender.id !== userIdRef.current) {
-        console.log('newMessage', data)
+        console.log('Received newMessage', data)
         setNewMessage(data);
       }
+      props?.socket.emit("room", { roomId: data.roomId}, (ack) => console.log('Requesting room ack', ack));
     });
+   
   };
 
   // Upon checking in to room, unread messages are reset
@@ -138,7 +141,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Ack of check in', ack, ack.data));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Check in ack', ack, ack.data));
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
