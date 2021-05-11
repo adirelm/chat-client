@@ -89,7 +89,7 @@ export default function Room(props) {
 
   const getUser = async () => {
     props?.socket.on("me", async (user) => {
-      console.log('userId:', user.id, 'userName:', user.name, 'meta', user.meta);
+      console.log('userId:', user.id, 'userName:', user.name,'thumbnail:',user.thumbnail, 'meta:', user.meta);
       userIdRef.current = user.id;
     });
   };
@@ -214,7 +214,7 @@ export default function Room(props) {
                     }}
                   >
                     <ListItemIcon>
-                      <Avatar />
+                      <Avatar/>
                     </ListItemIcon>
                     <ListItemText
                       primary={room.name}
