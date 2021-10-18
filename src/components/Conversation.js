@@ -61,6 +61,7 @@ export default function Conversation(props) {
   const lastMessageDate = useRef("");
   const [messages, setMessages] = useState([]);
   const [textValue, setTextValue] = useState("");
+  const [commentValue, setCommentValue] = useState("");
 
   const setRef = useCallback((node) => {
     if (node) {
@@ -71,6 +72,7 @@ export default function Conversation(props) {
   // Open a channel to receive messages
   useEffect(() => {
     messageListener();
+    commentsListener();
   }, []);
 
   useEffect(() => {
@@ -88,9 +90,9 @@ export default function Conversation(props) {
   }, [props.newMessage]);
 
   const messageListener = async () => {
-    await props.socket.on('unreadMessages', async (data) => {
-      console.log(data)
-    })
+    // await props.socket.on('unreadMessages', async (data) => {
+    //   console.log('unreadMessages ', data)
+    // })
     await props.socket.on("messages", async (data) => {
       const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
@@ -107,20 +109,43 @@ export default function Conversation(props) {
     });
   };
 
-  const sendMessage = async (newMessage) => {
+  const commentsListener = async () => {
+    await props.socket.on("roomComments", async (data) => {
+      console.log(`Comments of room: `, data);
+    });
+  };
+
+  const getComments = async () => {
+    props?.socket.emit("roomComments", { roomId: props.selectedRoom, pageNumber: 1 }, (ack) => console.log('Request comments of room ack', ack));
+  };
+
+
+  const sendMessage = async (body) => {
+    const message = {
+      roomId: props.selectedRoom,
+      body,
+    };
     setTextValue("");
     // Add new message current user sent
-    setMessages(prevState => [...prevState, { ...newMessage, sentByMe: true, sender: { id: props.userId } }]);
     if (props?.socket) {
-      await props.socket.emit("newMessage", newMessage, (ack) => { console.log('Emit message ack',ack) });
+      await props.socket.emit("newMessage", message, (ack) => {
+        console.log('Emit message ack', ack);
+        setMessages(prevState => [...prevState, ack.data]);
+      });
       props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log('Request room ack', ack));
     }
+  };
+
+  const sendComment = async (newComment) => {
+    setCommentValue("");
+    await props.socket.emit("comment", newComment, (ack) => console.log('Add new comment ack', ack));
+    console.log('Emit comment', newComment)
   };
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
     const firstCheckInTimeStamp = props.firstCheckInRef;
-    props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current, firstCheckInTimeStamp: firstCheckInTimeStamp }, (ack) => console.log('Emit messages ack',ack));
+    props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current, firstCheckInTimeStamp: firstCheckInTimeStamp }, (ack) => console.log('Emit messages ack', ack));
     console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
   };
 
@@ -133,15 +158,15 @@ export default function Conversation(props) {
               <Button variant="contained" disabled={!messages} onClick={async () => {
                 loadPreviousMessages();
               }}>Load previous</Button>
-              {messages?.map((message, index) => {
+              {messages?.map((message) => {
                 const sameSender = lastSender.current === message.sender.id;
                 lastSender.current = message.sender.id;
-                const lastMessage = messages.length - 1 === index;
+                const lastMessage = messages[messages.length - 1].id === message.id;
                 const sameDate =
                   lastMessageDate?.current === message.createdAt?.substring(0, 10);
                 lastMessageDate.current = message.createdAt?.substring(0, 10);
                 return (
-                  <ListItem key={index}>
+                  <ListItem key={message.id}>
                     <Grid container>
                       <Grid item xs={12}>
                         <ListItemText
@@ -171,6 +196,16 @@ export default function Conversation(props) {
                           secondary={message.unread ? "unread" : ""}
                         ></ListItemText>
                       </Grid>
+                      <Button key={message.id} variant="contained" align={message.sentByMe ? "right" : "left"} disabled={!commentValue}
+                        onClick={async () => {
+                          const comment = {
+                            userId: props.userId,
+                            messageId: message.id,
+                            roomId: props.selectedRoom,
+                            body: commentValue,
+                          };
+                          await sendComment(comment);
+                        }} >comment</Button>
                       <Grid item xs={12}>
                         <ListItemText
                           align={message.sentByMe ? "right" : "left"}
@@ -186,6 +221,20 @@ export default function Conversation(props) {
                 );
               })}
             </List>
+            <Button variant="contained"
+              onClick={async () => {
+                getComments();
+              }} >Get Comments</Button>
+            <Divider />
+            <TextField
+              value={commentValue}
+              id="comment"
+              label="comment"
+              fullWidth
+              onChange={(event) => {
+                setCommentValue(event.target.value);
+              }}
+            />
             <Divider />
             <Grid
               container
@@ -201,17 +250,18 @@ export default function Conversation(props) {
                   onChange={(event) => {
                     setTextValue(event.target.value);
                   }}
+                  onKeyDown={async (event) => {
+                    if (event.key === 'Enter' && event.target.value) {
+                      await sendMessage(textValue);
+                    }
+                  }}
                 />
               </Grid>
               <Grid align="right">
                 <Fab disabled={!textValue} color="primary" aria-label="add">
                   <SendIcon
                     onClick={async () => {
-                      const message = {
-                        roomId: props.selectedRoom,
-                        body: textValue,
-                      };
-                      await sendMessage(message);
+                      await sendMessage(textValue);
                     }}
                   />
                 </Fab>

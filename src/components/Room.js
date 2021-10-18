@@ -73,7 +73,6 @@ export default function Room(props) {
     }
   }, [rooms]);
 
-
   useEffect(() => {
     if (room != null) {
       shiftRooms();
@@ -81,15 +80,15 @@ export default function Room(props) {
   }, [room])
 
   const roomListener = async () => {
-    props?.socket.on("room", async (data) => { //on instead of once
-      console.log('room',data)
+    props?.socket.on("room", async (data) => { 
+      console.log('room', data)
       setRoom(data)
     });
   };
 
   const getUser = async () => {
     props?.socket.on("me", async (user) => {
-      console.log('userId:', user.id, 'userName:', user.name,'thumbnail:',user.thumbnail, 'meta:', user.meta);
+      console.log('userId:', user.id, 'userName:', user.name, 'thumbnail:', user.thumbnail, 'meta:', user.meta);
       userIdRef.current = user.id;
     });
   };
@@ -114,9 +113,9 @@ export default function Room(props) {
         console.log('Received newMessage', data)
         setNewMessage(data);
       }
-      props?.socket.emit("room", { roomId: data.roomId}, (ack) => console.log('Requesting room ack', ack));
+      props?.socket.emit("room", { roomId: data.roomId }, (ack) => console.log('Requesting room ack', ack));
     });
-   
+
   };
 
   // Upon checking in to room, unread messages are reset
@@ -141,7 +140,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Check in ack', ack, ack.data));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Check in ack', ack));
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
@@ -214,7 +213,7 @@ export default function Room(props) {
                     }}
                   >
                     <ListItemIcon>
-                      <Avatar/>
+                      <Avatar />
                     </ListItemIcon>
                     <ListItemText
                       primary={room.name}
