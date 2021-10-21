@@ -138,7 +138,7 @@ export default function Conversation(props) {
 
   const sendComment = async (newComment) => {
     setCommentValue("");
-    await props.socket.emit("comment", newComment, (ack) => console.log('Add new comment ack', ack));
+    await props.socket.emit("newComment", newComment, (ack) => console.log('Add new comment ack', ack));
     console.log('Emit comment', newComment)
   };
 

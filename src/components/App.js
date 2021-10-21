@@ -6,15 +6,8 @@ import { makeStyles } from "@material-ui/core/styles";
 
 const ENDPOINT = process.env.REACT_APP_SERVER_BASE_URL;
 
-// To connect from a few different users simultaneously
-// const userIds = [1, 8, 22, 24, 25]
-// const random = Math.floor(Math.random() * userIds.length);
-//userIds[random]
-const userId = prompt('userId')
-
-const socketInit = io(ENDPOINT, {
-  query: { userId, appId: 3 }
-});
+const token = prompt('Please enter access token');
+const socketInit = io(ENDPOINT, { query: { token } });
 
 const useStyles = makeStyles((theme) => ({
   root: {
