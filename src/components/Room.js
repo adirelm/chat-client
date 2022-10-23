@@ -63,6 +63,7 @@ export default function Room(props) {
   useEffect(() => {
     roomsListener();
     roomListener();
+    newRoomListener();
     getUser();
   }, []);
 
@@ -80,14 +81,23 @@ export default function Room(props) {
   }, [room])
 
   const roomListener = async () => {
-    props?.socket.on("room", async (data) => { 
+    props?.socket.on('room', async (data) => { 
       console.log('room', data)
       setRoom(data)
     });
   };
 
+  const newRoomListener = async () => {
+    props?.socket.on('newRoom', async (data) => { 
+      console.log('newRoom', data);
+      props?.socket.emit('join', { roomId: data.roomId }, 
+      (ack) => console.log('Requesting to join room ack', ack));
+
+    });
+  };
+
   const getUser = async () => {
-    props?.socket.on("me", async (user) => {
+    props?.socket.on('me', async (user) => {
       console.log('userId:', user.id, 'userName:', user.name, 'thumbnail:', user.thumbnail, 'meta:', user.meta);
       userIdRef.current = user.id;
     });
