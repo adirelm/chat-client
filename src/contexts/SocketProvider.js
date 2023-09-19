@@ -3,7 +3,7 @@ import io from "socket.io-client";
 
 const SocketContext = React.createContext();
 
-const ENDPOINT = "http://localhost:3001";
+const ENDPOINT = "http://localhost:3000";
 
 export async function useSocket() {
   return useContext(SocketContext);
