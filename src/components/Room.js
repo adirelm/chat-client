@@ -1,8 +1,10 @@
+import { Button } from "@material-ui/core";
 import Conversation from "./Conversation.js";
 import { makeStyles } from "@material-ui/core/styles";
 import React, { useState, useEffect, useRef } from "react";
 import ChatBubbleOutlineIcon from "@material-ui/icons/ChatBubbleOutline";
 import {
+  Button,
   List,
   Grid,
   Badge,
@@ -55,6 +57,7 @@ export default function Room(props) {
   const [searchValue, setSearchValue] = useState("");
   const [selectedRoom, setSelectedRoom] = useState();
   const [filteredRooms, setFilteredRooms] = useState([]);
+  const [isSpectator, setIsSpectator] = useState(false);
 
   useEffect(() => {
     filterSearch();
@@ -93,6 +96,13 @@ export default function Room(props) {
       props?.socket.emit('join', { roomId: data.roomId }, 
       (ack) => console.log('Requesting to join room ack', ack));
 
+    });
+  };
+
+  const createRoom = () => {
+    // Emitting a createRoom event to the server
+    props?.socket.emit('createRoom', {}, (ack) => {
+      console.log('createRoom ack:', ack);
     });
   };
 
@@ -150,7 +160,11 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Check in ack', ack));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => {
+      console.log('Check in ack', ack);
+      console.log("checkInData", ack)
+      setIsSpectator(ack.data.isSpectator);
+    });
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId)
     setSelectedRoom(roomId);
@@ -179,6 +193,13 @@ export default function Room(props) {
           <Typography variant="h4" noWrap>
             Monkey Chat
           </Typography>
+            <Button
+              color="inherit"
+              onClick={createRoom}
+              style={{ marginLeft: 'auto' }} // To push the button to the right side of the AppBar
+            >
+            Start Chat Now
+          </Button>
         </Toolbar>
       </AppBar>
       <div>
@@ -254,6 +275,7 @@ export default function Room(props) {
             newMessage={newMessage}
             selectedRoom={selectedRoom}
             userId={userIdRef.current}
+            isSpectator={isSpectator}
             socket={props.socket}
             firstCheckInRef={firstCheckInRef.current}
           />

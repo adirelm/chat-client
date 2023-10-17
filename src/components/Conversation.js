@@ -55,6 +55,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Conversation(props) {
+  console.log("isSpectator", props.isSpectator)
   const page = useRef(1);
   const classes = useStyles();
   const lastSender = useRef("");
@@ -159,69 +160,72 @@ export default function Conversation(props) {
                 loadPreviousMessages();
               }}>Load previous</Button>
               {messages?.map((message) => {
-                const sameSender = lastSender.current === message.sender.id;
-                lastSender.current = message.sender.id;
-                const lastMessage = messages[messages.length - 1].id === message.id;
-                const sameDate =
-                  lastMessageDate?.current === message.createdAt?.substring(0, 10);
-                lastMessageDate.current = message.createdAt?.substring(0, 10);
-                return (
-                  <ListItem key={message.id}>
-                    <Grid container>
-                      <Grid item xs={12}>
-                        <ListItemText
-                          ref={lastMessage ? setRef : null}
-                          align={"center"}
-                          secondary={
-                            sameDate ? (
-                              ""
-                            ) : (
-                              <Moment format="MM/DD/YYYY">
+                if (message) {
+                  const sameSender = lastSender.current === message.sender.id;
+                  lastSender.current = message.sender.id;
+                  const lastMessage = messages[messages.length - 1].id === message.id;
+                  const sameDate =
+                    lastMessageDate?.current === message.createdAt?.substring(0, 10);
+                  lastMessageDate.current = message.createdAt?.substring(0, 10);
+                  return (
+                    <ListItem key={message.id}>
+                      <Grid container>
+                        <Grid item xs={12}>
+                          <ListItemText
+                            ref={lastMessage ? setRef : null}
+                            align={"center"}
+                            secondary={
+                              sameDate ? (
+                                ""
+                              ) : (
+                                <Moment format="MM/DD/YYYY">
+                                  {moment(message.createdAt)}
+                                </Moment>
+                              )
+                            }
+                          ></ListItemText>
+                          <ListItemText
+                            align={message.sentByMe ? "right" : "left"}
+                            primary={
+                              sameSender || message.sentByMe ? "" : message.sender.name
+                            }
+                          ></ListItemText>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <ListItemText
+                            align={message.sentByMe ? "right" : "left"}
+                            primary={message.body}
+                            secondary={message.unread ? "unread" : ""}
+                          ></ListItemText>
+                        </Grid>
+                        <Button key={message.id} variant="contained" align={message.sentByMe ? "right" : "left"} disabled={!commentValue}
+                          onClick={async () => {
+                            const comment = {
+                              userId: props.userId,
+                              messageId: message.id,
+                              roomId: props.selectedRoom,
+                              body: commentValue,
+                            };
+                            await sendComment(comment);
+                          }} >comment</Button>
+                        <Grid item xs={12}>
+                          <ListItemText
+                            align={message.sentByMe ? "right" : "left"}
+                            secondary={
+                              <Moment format="HH:mm">
                                 {moment(message.createdAt)}
                               </Moment>
-                            )
-                          }
-                        ></ListItemText>
-                        <ListItemText
-                          align={message.sentByMe ? "right" : "left"}
-                          primary={
-                            sameSender || message.sentByMe ? "" : message.sender.name
-                          }
-                        ></ListItemText>
+                            }
+                          ></ListItemText>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={12}>
-                        <ListItemText
-                          align={message.sentByMe ? "right" : "left"}
-                          primary={message.body}
-                          secondary={message.unread ? "unread" : ""}
-                        ></ListItemText>
-                      </Grid>
-                      <Button key={message.id} variant="contained" align={message.sentByMe ? "right" : "left"} disabled={!commentValue}
-                        onClick={async () => {
-                          const comment = {
-                            userId: props.userId,
-                            messageId: message.id,
-                            roomId: props.selectedRoom,
-                            body: commentValue,
-                          };
-                          await sendComment(comment);
-                        }} >comment</Button>
-                      <Grid item xs={12}>
-                        <ListItemText
-                          align={message.sentByMe ? "right" : "left"}
-                          secondary={
-                            <Moment format="HH:mm">
-                              {moment(message.createdAt)}
-                            </Moment>
-                          }
-                        ></ListItemText>
-                      </Grid>
-                    </Grid>
-                  </ListItem>
-                );
-              })}
+                    </ListItem>
+                  );
+                }
+                }
+              )}
             </List>
-            <Button variant="contained"
+            {/* <Button variant="contained"
               onClick={async () => {
                 getComments();
               }} >Get Comments</Button>
@@ -234,8 +238,10 @@ export default function Conversation(props) {
               onChange={(event) => {
                 setCommentValue(event.target.value);
               }}
-            />
+            /> */}
             <Divider />
+            {!props.isSpectator && (
+
             <Grid
               container
               style={{ padding: "20px" }}
@@ -267,6 +273,7 @@ export default function Conversation(props) {
                 </Fab>
               </Grid>
             </Grid>
+            )}
           </Grid>
         </Grid>
       </div>
