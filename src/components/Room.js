@@ -1,4 +1,3 @@
-import { Button } from "@material-ui/core";
 import Conversation from "./Conversation.js";
 import { makeStyles } from "@material-ui/core/styles";
 import React, { useState, useEffect, useRef } from "react";
@@ -44,6 +43,16 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.default,
     padding: theme.spacing(3),
   },
+  activeStatus: {
+    color: "green",
+    fontWeight: "bold",
+    marginLeft: theme.spacing(1),
+  },
+  inactiveStatus: {
+    color: "red",
+    fontWeight: "bold",
+    marginLeft: theme.spacing(1),
+  },
 }));
 
 export default function Room(props) {
@@ -81,34 +90,43 @@ export default function Room(props) {
     if (room != null) {
       shiftRooms();
     }
-  }, [room])
+  }, [room]);
 
   const roomListener = async () => {
-    props?.socket.on('room', async (data) => { 
-      console.log('room', data)
-      setRoom(data)
+    props?.socket.on("room", async (data) => {
+      console.log("room", data);
+      setRoom(data);
     });
   };
 
   const newRoomListener = async () => {
-    props?.socket.on('newRoom', async (data) => { 
-      console.log('newRoom', data);
-      props?.socket.emit('join', { roomId: data.roomId }, 
-      (ack) => console.log('Requesting to join room ack', ack));
-
+    props?.socket.on("newRoom", async (data) => {
+      console.log("newRoom", data);
+      props?.socket.emit("join", { roomId: data.roomId }, (ack) =>
+        console.log("Requesting to join room ack", ack)
+      );
     });
   };
 
   const createRoom = () => {
     // Emitting a createRoom event to the server
-    props?.socket.emit('createRoom', {}, (ack) => {
-      console.log('createRoom ack:', ack);
+    props?.socket.emit("createRoom", {}, (ack) => {
+      console.log("createRoom ack:", ack);
     });
   };
 
   const getUser = async () => {
-    props?.socket.on('me', async (user) => {
-      console.log('userId:', user.id, 'userName:', user.name, 'thumbnail:', user.thumbnail, 'meta:', user.meta);
+    props?.socket.on("me", async (user) => {
+      console.log(
+        "userId:",
+        user.id,
+        "userName:",
+        user.name,
+        "thumbnail:",
+        user.thumbnail,
+        "meta:",
+        user.meta
+      );
       userIdRef.current = user.id;
     });
   };
@@ -130,12 +148,13 @@ export default function Room(props) {
     activeListener.current = true;
     await props?.socket.on(`newMessage`, async (data) => {
       if (data.sender.id !== userIdRef.current) {
-        console.log('Received newMessage', data)
+        console.log("Received newMessage", data);
         setNewMessage(data);
       }
-      props?.socket.emit("room", { roomId: data.roomId }, (ack) => console.log('Requesting room ack', ack));
+      props?.socket.emit("room", { roomId: data.roomId }, (ack) =>
+        console.log("Requesting room ack", ack)
+      );
     });
-
   };
 
   // Upon checking in to room, unread messages are reset
@@ -152,7 +171,7 @@ export default function Room(props) {
   // Create array of rooms that match the search value
   const filterSearch = async () => {
     const updatedFilteredRooms = rooms.filter((room) => {
-      const roomName = room?.name?.toLowerCase() || '';
+      const roomName = room?.name?.toLowerCase() || "";
       return roomName.includes(searchValue.toLowerCase());
     });
     setFilteredRooms(updatedFilteredRooms);
@@ -161,28 +180,29 @@ export default function Room(props) {
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
     await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => {
-      console.log('Check in ack', ack);
-      console.log("checkInData", ack)
+      console.log("Check in ack", ack);
+      console.log("checkInData", ack);
       setIsSpectator(ack.data.isSpectator);
     });
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
-    console.log("Check in to room", roomId)
+    console.log("Check in to room", roomId);
     setSelectedRoom(roomId);
     resetUnread(roomId);
   };
 
   // Check out of room - update membership last read and status
   const checkOut = async (roomId) => {
-    props?.socket.emit("checkOut", { roomId: roomId }, (ack) => console.log(ack));
+    props?.socket.emit("checkOut", { roomId: roomId }, (ack) =>
+      console.log(ack)
+    );
   };
 
   const roomsListener = async () => {
     await props?.socket.on("rooms", async (data) => {
       const rooms = data.data;
       setRooms(rooms);
-      console.log('rooms', rooms)
+      console.log("rooms", rooms);
     });
-
   };
 
   return (
@@ -193,11 +213,11 @@ export default function Room(props) {
           <Typography variant="h4" noWrap>
             Monkey Chat
           </Typography>
-            <Button
-              color="inherit"
-              onClick={createRoom}
-              style={{ marginLeft: 'auto' }} // To push the button to the right side of the AppBar
-            >
+          <Button
+            color="inherit"
+            onClick={createRoom}
+            style={{ marginLeft: "auto" }} // To push the button to the right side of the AppBar
+          >
             Start Chat Now
           </Button>
         </Toolbar>
@@ -226,11 +246,14 @@ export default function Room(props) {
             />
             <List>
               {filteredRooms.map((room) => {
-                let lastMessage = '';
+                let lastMessage = "";
                 if (room.lastMessage) {
-                  lastMessage = room.lastMessage.sender.name + ': ' + room.lastMessage.body;
-                  lastMessage = (lastMessage).length > 12 ?
-                    lastMessage.slice(0, 16) + '...' : lastMessage
+                  lastMessage =
+                    room.lastMessage.sender.name + ": " + room.lastMessage.body;
+                  lastMessage =
+                    lastMessage.length > 12
+                      ? lastMessage.slice(0, 16) + "..."
+                      : lastMessage;
                 }
                 return (
                   <ListItem
@@ -238,7 +261,7 @@ export default function Room(props) {
                     key={room.id}
                     selected={selectedRoom === room.id}
                     onClick={async () => {
-                      setSearchValue('');
+                      setSearchValue("");
                       if (!selectedRoom || selectedRoom !== room.id)
                         checkIn(room.id);
                     }}
@@ -249,7 +272,27 @@ export default function Room(props) {
                     <ListItemText
                       primary={room.name}
                       secondary={
-                        lastMessage
+                        <React.Fragment>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="textPrimary"
+                          >
+                            {lastMessage}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            className={
+                              room.status === "active"
+                                ? classes.activeStatus
+                                : classes.inactiveStatus
+                            }
+                          >
+                            {room.status.charAt(0).toUpperCase() +
+                              room.status.slice(1)}
+                          </Typography>
+                        </React.Fragment>
                       }
                     />
                     <Badge
