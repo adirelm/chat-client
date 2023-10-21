@@ -1,4 +1,5 @@
 import Conversation from "./Conversation.js";
+import TimerIcon from "@material-ui/icons/Timer";
 import { makeStyles } from "@material-ui/core/styles";
 import React, { useState, useEffect, useRef } from "react";
 import ChatBubbleOutlineIcon from "@material-ui/icons/ChatBubbleOutline";
@@ -18,6 +19,7 @@ import {
   CssBaseline,
   ListItemText,
   ListItemIcon,
+  IconButton,
 } from "@material-ui/core";
 
 const drawerWidth = 240;
@@ -108,9 +110,19 @@ export default function Room(props) {
     });
   };
 
+  const extendRoomTime = (roomId) => {
+    props?.socket.emit("extendRoomTime", { roomId }, (ack) => {
+      if (ack.message === "Ok") {
+        alert("Successfully extended room time by 5 minutes!");
+      } else {
+        alert("Failed to extend room time.");
+      }
+    });
+  };
+
   const createRoom = () => {
     // Emitting a createRoom event to the server
-    props?.socket.emit("createRoom", {}, (ack) => {
+    props?.socket.emit("createRoom", null, (ack) => {
       console.log("createRoom ack:", ack);
     });
   };
@@ -289,8 +301,8 @@ export default function Room(props) {
                                 : classes.inactiveStatus
                             }
                           >
-                            {room.status.charAt(0).toUpperCase() +
-                              room.status.slice(1)}
+                            {room.status?.charAt(0).toUpperCase() +
+                              room.status?.slice(1)}
                           </Typography>
                         </React.Fragment>
                       }
@@ -302,6 +314,14 @@ export default function Room(props) {
                     >
                       <ChatBubbleOutlineIcon></ChatBubbleOutlineIcon>
                     </Badge>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation(); // Stop the ListItem onClick from triggering
+                        extendRoomTime(room.id);
+                      }}
+                    >
+                      <TimerIcon />
+                    </IconButton>
                   </ListItem>
                 );
               })}

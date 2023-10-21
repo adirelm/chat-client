@@ -4,11 +4,19 @@ import io from "socket.io-client";
 import React, { useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 
-let token =
-  "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIwLCJzdWJUeXBlIjoiVmlzaXRvciIsImlhdCI6MTY5Nzg0MTE0NCwiaXNzIjoiY2FsIn0.GydkCXAYs7Tm9c0f1gSP2B-ORm44tKIPmHkQ6_noeoHIbx3cwEE4AB1S2ZWUXijXefb7e3GGgMR_ls5U_s5L2ddK-DgZ_n4uKtgnI_Zx1IDB_uaxE-fbAiS-vDuGImT7X4x8FG2ppVCEHS1xs0YjSm9G9nGE5jYtEfgjhb1b14fUie8ROUnyz-VJQbvGx1zSCDus8xTrm953WDtx1vf41XM9XBH8wyPRdXriyvr7d6-b-HX4Ich7xMovgTy7_FIviUwSWWJOpoOLY4eEcoAOuEvMWSw3OeFutiU4xRo78hVFbPCqbqsJh_nvR1wHvEPFSWit6_OAOrDxdIii5bBJ4Q";
+const user1 =
+  "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJmYW1pbHkiOiI0NTQ1MDU5Yy0yMjY3LTQyODItODRmMC1mNTI0OWNjMzg5OTMiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjozLCJzdWJUeXBlIjoiVXNlciIsInNvdXJjZUlkIjozLCJzb3VyY2VUeXBlIjoiRW1haWxPdHBDcmVkZW50aWFsU2V0IiwiaXNUZXN0QWNjb3VudCI6ZmFsc2UsInV1aWQiOiI4ODlhNGFkZS1hZWI4LTQwOGQtOTZkMS01ZjM3YjUzYTk2NjciLCJpYXQiOjE2OTc5MjE3MzEsImV4cCI6MTY5NzkyNTMzMSwiaXNzIjoiY2FsIn0.tkWZDzNRc112JoFAT9hg6JqNq2i-5A_jB83d8GZuj0SpIu_4C7mhBBnB9zxq5pqBWJYKQwDjT1BOOlmXR3TWzSJPi6tcDf4lZ8wKgbMAk_pGRY0IfUw8150W-50MttYPWXg_OZJIQhr0_rm3fXUYAqOK-eJz7Yo9jjFvZ9s_zkdx-vQrDDOI_luWip6NT0QmJ4oOQPR2fsmlPF9oMPe-1yNPwulC6I6jRfShHYpj0PslmSdJBdYAOycA7b4f_eissLpyEw1hn6xFe3wlrmt3wTJMVkVXu0yinvtrYrWZ568zb5pwGQbQpjDUr54KLMfPHFZTd-BfCsjy9FmY_SphVA";
+
+const user2 =
+  "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyLCJzdWJUeXBlIjoiVmlzaXRvciIsImlhdCI6MTY5NzkyMjg1NiwiaXNzIjoiY2FsIn0.wi5fLq_7rNM427o4Ed7PWU2OmyC7ASrhs1BTV0vHOcy6DPJVc39iEdoFexjJGm0fnkFBCgVBLUCOZ9vCA2s3z63UdIL9Mw9UBlUT11aBtjV3SoiSs-OhBz9uaHJA0jDvrf6sGwgpqa2UvYroZGq-H3vLhwM1lH0xZl4hzyqOQh5G3QsDXgMnzIBaQwU6-EyTrpxi7d_49inLI0uNY2s5wxzsEGQKzt7zY_hBXBI-QkGlcaAD9kSGwDJpf6RYDhrE2AbU-fVl7mlR4OW68sat495Ue96z9KzYdtcWbcXm3eLTvc6B3oZgP6OszQXX1uA3PUtTXoTTi20SBs9YPFiIKA";
+
+const choice = window.prompt(
+  "Choose a token: Type 'user1' for user1 or 'user2' for users"
+);
+let token = choice === "user1" ? user1 : user2;
 
 const ENDPOINT =
-  process.env.REACT_APP_SERVER_BASE_URL || "http://localhost:3000";
+  process.env.REACT_APP_SERVER_BASE_URL || "http://localhost:3001";
 const socketInit = io(ENDPOINT, { transports: ["websocket"], auth: { token } });
 
 const useStyles = makeStyles((theme) => ({
