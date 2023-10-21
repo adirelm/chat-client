@@ -182,7 +182,7 @@ export default function Room(props) {
     await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => {
       console.log("Check in ack", ack);
       console.log("checkInData", ack);
-      setIsSpectator(ack.data.isSpectator);
+      setIsSpectator(ack?.data?.isSpectator);
     });
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId);
