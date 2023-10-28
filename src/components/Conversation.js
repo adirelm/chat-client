@@ -4,7 +4,7 @@ import Fab from "@material-ui/core/Fab";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
 import Paper from "@material-ui/core/Paper";
-import Button from '@material-ui/core/Button';
+import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
 import Divider from "@material-ui/core/Divider";
 import ListItem from "@material-ui/core/ListItem";
@@ -85,7 +85,7 @@ export default function Conversation(props) {
   useEffect(() => {
     // Add new incoming message
     if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
-      setMessages(prevState => [...prevState, props.newMessage]);
+      setMessages((prevState) => [...prevState, props.newMessage]);
     }
   }, [props.newMessage]);
 
@@ -97,14 +97,19 @@ export default function Conversation(props) {
       const newMessages = data.data;
       const pageNumber = data.page.pageNumber;
       const totalPages = data.page.totalPages;
-      console.log('Upon requesting messages', data);
+      console.log("Upon requesting messages", data);
       if (pageNumber > 1) {
-        setMessages(prevState => [...newMessages, ...prevState]);
-        console.log(`Received page ${pageNumber}/${totalPages} of messages`, newMessages);
-      }
-      else {
+        setMessages((prevState) => [...newMessages, ...prevState]);
+        console.log(
+          `Received page ${pageNumber}/${totalPages} of messages`,
+          newMessages
+        );
+      } else {
         setMessages(newMessages);
-        console.log(`Received page ${pageNumber}/${totalPages} of messages`, newMessages);
+        console.log(
+          `Received page ${pageNumber}/${totalPages} of messages`,
+          newMessages
+        );
       }
     });
   };
@@ -116,9 +121,12 @@ export default function Conversation(props) {
   };
 
   const getComments = async () => {
-    props?.socket.emit("roomComments", { roomId: props.selectedRoom, pageNumber: 1 }, (ack) => console.log('Request comments of room ack', ack));
+    props?.socket.emit(
+      "roomComments",
+      { roomId: props.selectedRoom, pageNumber: 1 },
+      (ack) => console.log("Request comments of room ack", ack)
+    );
   };
-
 
   const sendMessage = async (body) => {
     const message = {
@@ -129,24 +137,40 @@ export default function Conversation(props) {
     // Add new message current user sent
     if (props?.socket) {
       await props.socket.emit("newMessage", message, (ack) => {
-        console.log('Emit message ack', ack);
-        setMessages(prevState => [...prevState, ack.data]);
+        console.log("Emit message ack", ack);
+        if (ack.code >= 200 && ack.code <= 299) {
+          setMessages((prevState) => [...prevState, ack.data]);
+        }
       });
-      props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) => console.log('Request room ack', ack));
+      props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) =>
+        console.log("Request room ack", ack)
+      );
     }
   };
 
   const sendComment = async (newComment) => {
     setCommentValue("");
-    await props.socket.emit("newComment", newComment, (ack) => console.log('Add new comment ack', ack));
-    console.log('Emit comment', newComment)
+    await props.socket.emit("newComment", newComment, (ack) =>
+      console.log("Add new comment ack", ack)
+    );
+    console.log("Emit comment", newComment);
   };
 
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
     const firstCheckInTimeStamp = props.firstCheckInRef;
-    props.socket.emit('messages', { roomId: props.selectedRoom, pageNumber: page.current, firstCheckInTimeStamp: firstCheckInTimeStamp }, (ack) => console.log('Emit messages ack', ack));
-    console.log(`Requesting page ${page.current} of messages in room ${props.selectedRoom}`);
+    props.socket.emit(
+      "messages",
+      {
+        roomId: props.selectedRoom,
+        pageNumber: page.current,
+        firstCheckInTimeStamp: firstCheckInTimeStamp,
+      },
+      (ack) => console.log("Emit messages ack", ack)
+    );
+    console.log(
+      `Requesting page ${page.current} of messages in room ${props.selectedRoom}`
+    );
   };
 
   if (props.selectedRoom)
@@ -155,16 +179,25 @@ export default function Conversation(props) {
         <Grid container component={Paper} className={classes.chatSection}>
           <Grid item xs={9} className={classes.gridSize}>
             <List className={classes.messageArea}>
-              <Button variant="contained" disabled={!messages} onClick={async () => {
-                loadPreviousMessages();
-              }}>Load previous</Button>
+              <Button
+                variant="contained"
+                disabled={!messages}
+                onClick={async () => {
+                  loadPreviousMessages();
+                }}
+              >
+                Load previous
+              </Button>
               {messages?.map((message) => {
                 const sameSender = lastSender.current === message.sender.id;
                 lastSender.current = message.sender.id;
-                const lastMessage = messages[messages.length - 1].id === message.id;
+                const lastMessage =
+                  messages[messages.length - 1].id === message.id;
                 const sameDate =
-                  lastMessageDate?.current === message.createdAt?.substring(0, 10);
+                  lastMessageDate?.current ===
+                  message.createdAt?.substring(0, 10);
                 lastMessageDate.current = message.createdAt?.substring(0, 10);
+
                 return (
                   <ListItem key={message.id}>
                     <Grid container>
@@ -182,59 +215,69 @@ export default function Conversation(props) {
                             )
                           }
                         ></ListItemText>
-                        <ListItemText
-                          align={message.sentByMe ? "right" : "left"}
-                          primary={
-                            sameSender || message.sentByMe ? "" : message.sender.name
-                          }
-                        ></ListItemText>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <ListItemText
-                          align={message.sentByMe ? "right" : "left"}
-                          primary={message.body}
-                          secondary={message.unread ? "unread" : ""}
-                        ></ListItemText>
-                      </Grid>
-                      <Button key={message.id} variant="contained" align={message.sentByMe ? "right" : "left"} disabled={!commentValue}
-                        onClick={async () => {
-                          const comment = {
-                            userId: props.userId,
-                            messageId: message.id,
-                            roomId: props.selectedRoom,
-                            body: commentValue,
-                          };
-                          await sendComment(comment);
-                        }} >comment</Button>
-                      <Grid item xs={12}>
-                        <ListItemText
-                          align={message.sentByMe ? "right" : "left"}
-                          secondary={
-                            <Moment format="HH:mm">
-                              {moment(message.createdAt)}
-                            </Moment>
-                          }
-                        ></ListItemText>
+
+                        {message.entityType === "system" ? (
+                          // System Message Layout
+                          <div
+                            style={{
+                              backgroundColor: "#f0f0f0",
+                              borderRadius: "15px",
+                              padding: "5px 10px",
+                              margin: "5px 0",
+                              maxWidth: "100%",
+                              alignSelf: "center",
+                            }}
+                          >
+                            <ListItemText
+                              align="center"
+                              primary={
+                                <span
+                                  style={{
+                                    fontStyle: "italic",
+                                    color: "#888888",
+                                  }}
+                                >
+                                  {message.body}
+                                </span>
+                              }
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <ListItemText
+                              align={message.sentByMe ? "right" : "left"}
+                              primary={
+                                sameSender || message.sentByMe
+                                  ? ""
+                                  : message.sender.name
+                              }
+                            ></ListItemText>
+                            <Grid item xs={12}>
+                              <ListItemText
+                                align={message.sentByMe ? "right" : "left"}
+                                primary={message.body}
+                                secondary={message.unread ? "unread" : ""}
+                              ></ListItemText>
+                            </Grid>
+                            <Grid item xs={12}>
+                              <ListItemText
+                                align={message.sentByMe ? "right" : "left"}
+                                secondary={
+                                  <Moment format="HH:mm">
+                                    {moment(message.createdAt)}
+                                  </Moment>
+                                }
+                              ></ListItemText>
+                            </Grid>
+                          </>
+                        )}
                       </Grid>
                     </Grid>
                   </ListItem>
                 );
               })}
             </List>
-            <Button variant="contained"
-              onClick={async () => {
-                getComments();
-              }} >Get Comments</Button>
             <Divider />
-            <TextField
-              value={commentValue}
-              id="comment"
-              label="comment"
-              fullWidth
-              onChange={(event) => {
-                setCommentValue(event.target.value);
-              }}
-            />
             <Divider />
             <Grid
               container
@@ -251,7 +294,7 @@ export default function Conversation(props) {
                     setTextValue(event.target.value);
                   }}
                   onKeyDown={async (event) => {
-                    if (event.key === 'Enter' && event.target.value) {
+                    if (event.key === "Enter" && event.target.value) {
                       await sendMessage(textValue);
                     }
                   }}

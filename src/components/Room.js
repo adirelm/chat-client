@@ -1,5 +1,6 @@
 import Conversation from "./Conversation.js";
 import { makeStyles } from "@material-ui/core/styles";
+import AIBrainIcon from "@material-ui/icons/EmojiObjects";
 import React, { useState, useEffect, useRef } from "react";
 import ChatBubbleOutlineIcon from "@material-ui/icons/ChatBubbleOutline";
 import {
@@ -8,11 +9,13 @@ import {
   Badge,
   Avatar,
   Drawer,
+  Switch,
   AppBar,
   Divider,
   Toolbar,
   ListItem,
   TextField,
+  IconButton,
   Typography,
   CssBaseline,
   ListItemText,
@@ -78,27 +81,36 @@ export default function Room(props) {
     if (room != null) {
       shiftRooms();
     }
-  }, [room])
+  }, [room]);
 
   const roomListener = async () => {
-    props?.socket.on('room', async (data) => { 
-      console.log('room', data)
-      setRoom(data)
+    props?.socket.on("room", async (data) => {
+      console.log("room", data);
+      setRoom(data);
     });
   };
 
   const newRoomListener = async () => {
-    props?.socket.on('newRoom', async (data) => { 
-      console.log('newRoom', data);
-      props?.socket.emit('join', { roomId: data.roomId }, 
-      (ack) => console.log('Requesting to join room ack', ack));
-
+    props?.socket.on("newRoom", async (data) => {
+      console.log("newRoom", data);
+      props?.socket.emit("join", { roomId: data.roomId }, (ack) =>
+        console.log("Requesting to join room ack", ack)
+      );
     });
   };
 
   const getUser = async () => {
-    props?.socket.on('me', async (user) => {
-      console.log('userId:', user.id, 'userName:', user.name, 'thumbnail:', user.thumbnail, 'meta:', user.meta);
+    props?.socket.on("me", async (user) => {
+      console.log(
+        "userId:",
+        user.id,
+        "userName:",
+        user.name,
+        "thumbnail:",
+        user.thumbnail,
+        "meta:",
+        user.meta
+      );
       userIdRef.current = user.id;
     });
   };
@@ -119,13 +131,18 @@ export default function Room(props) {
   const newMessageListener = async () => {
     activeListener.current = true;
     await props?.socket.on(`newMessage`, async (data) => {
-      if (data.sender.id !== userIdRef.current) {
-        console.log('Received newMessage', data)
+      console.log("NEW MESSAGE DATA:", data);
+      if (
+        data?.sender?.id !== userIdRef?.current ||
+        data.entityType === "system"
+      ) {
+        console.log("Received newMessage", data);
         setNewMessage(data);
       }
-      props?.socket.emit("room", { roomId: data.roomId }, (ack) => console.log('Requesting room ack', ack));
+      props?.socket.emit("room", { roomId: data.roomId }, (ack) =>
+        console.log("Requesting room ack", ack)
+      );
     });
-
   };
 
   // Upon checking in to room, unread messages are reset
@@ -142,7 +159,7 @@ export default function Room(props) {
   // Create array of rooms that match the search value
   const filterSearch = async () => {
     const updatedFilteredRooms = rooms.filter((room) => {
-      const roomName = room?.name?.toLowerCase() || '';
+      const roomName = room?.name?.toLowerCase() || "";
       return roomName.includes(searchValue.toLowerCase());
     });
     setFilteredRooms(updatedFilteredRooms);
@@ -150,25 +167,54 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => console.log('Check in ack', ack));
+    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) =>
+      console.log("Check in ack", ack)
+    );
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
-    console.log("Check in to room", roomId)
+    console.log("Check in to room", roomId);
     setSelectedRoom(roomId);
     resetUnread(roomId);
   };
 
   // Check out of room - update membership last read and status
   const checkOut = async (roomId) => {
-    props?.socket.emit("checkOut", { roomId: roomId }, (ack) => console.log(ack));
+    props?.socket.emit("checkOut", { roomId: roomId }, (ack) =>
+      console.log(ack)
+    );
   };
 
   const roomsListener = async () => {
     await props?.socket.on("rooms", async (data) => {
       const rooms = data.data;
       setRooms(rooms);
-      console.log('rooms', rooms)
+      console.log("rooms", rooms);
     });
+  };
 
+  const handleToggleTakeOver = async (roomId) => {
+    const updatedRooms = rooms.map((room) => {
+      if (room.id === roomId) {
+        room.takeOver = !room.takeOver;
+        // Emit the socket event
+        props?.socket.emit("takeOver", { roomId: roomId });
+      }
+      return room;
+    });
+    setRooms(updatedRooms);
+  };
+
+  const handleToggleAIMode = async (roomId) => {
+    // Call your socket event to toggle AI mode
+    props?.socket.emit("aiMode", { roomId: roomId });
+
+    // Optionally, if you're maintaining the AI Mode state in the frontend:
+    const updatedRooms = rooms.map((room) => {
+      if (room.id === roomId) {
+        room.aiMode = !room.aiMode;
+      }
+      return room;
+    });
+    setRooms(updatedRooms);
   };
 
   return (
@@ -205,11 +251,14 @@ export default function Room(props) {
             />
             <List>
               {filteredRooms.map((room) => {
-                let lastMessage = '';
+                let lastMessage = "";
                 if (room.lastMessage) {
-                  lastMessage = room.lastMessage.sender.name + ': ' + room.lastMessage.body;
-                  lastMessage = (lastMessage).length > 12 ?
-                    lastMessage.slice(0, 16) + '...' : lastMessage
+                  lastMessage =
+                    room.lastMessage.sender.name + ": " + room.lastMessage.body;
+                  lastMessage =
+                    lastMessage.length > 12
+                      ? lastMessage.slice(0, 16) + "..."
+                      : lastMessage;
                 }
                 return (
                   <ListItem
@@ -217,7 +266,7 @@ export default function Room(props) {
                     key={room.id}
                     selected={selectedRoom === room.id}
                     onClick={async () => {
-                      setSearchValue('');
+                      setSearchValue("");
                       if (!selectedRoom || selectedRoom !== room.id)
                         checkIn(room.id);
                     }}
@@ -226,11 +275,32 @@ export default function Room(props) {
                       <Avatar />
                     </ListItemIcon>
                     <ListItemText
-                      primary={room.name}
-                      secondary={
-                        lastMessage
+                      primary={
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          {room.name}
+                          <Grid container alignItems="center" spacing={2}>
+                            <Grid item>
+                              <Switch
+                                checked={room.takeOver}
+                                onChange={() => handleToggleTakeOver(room.id)}
+                                color="primary"
+                                size="small"
+                              />
+                            </Grid>
+                            <Grid item>
+                              <IconButton
+                                onClick={() => handleToggleAIMode(room.id)}
+                              >
+                                <AIBrainIcon
+                                  color={room.aiMode ? "primary" : "disabled"}
+                                />
+                              </IconButton>
+                            </Grid>
+                          </Grid>
+                        </div>
                       }
                     />
+
                     <Badge
                       badgeContent={room.unreadMessages}
                       invisible={room.unreadMessages > 0 ? false : true}
