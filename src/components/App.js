@@ -16,7 +16,7 @@ const choice = window.prompt(
 let token = choice === "consumer" ? consumerToken : expertToken;
 
 const ENDPOINT =
-  process.env.REACT_APP_SERVER_BASE_URL || "https://cal-server-staging-85674c7c21e8.herokuapp.com/";
+  process.env.REACT_APP_SERVER_BASE_URL || "http://10.0.1.181:3000";
 const socketInit = io(ENDPOINT, {
   transports: ["websocket"],
   auth: { token },
