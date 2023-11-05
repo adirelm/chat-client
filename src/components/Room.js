@@ -69,6 +69,7 @@ export default function Room(props) {
   const [selectedRoom, setSelectedRoom] = useState();
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [isSpectator, setIsSpectator] = useState(false);
+  const [blockPermission, setBlockPermission] = useState(false);
 
   useEffect(() => {
     filterSearch();
@@ -193,8 +194,8 @@ export default function Room(props) {
   const checkIn = async (roomId) => {
     await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) => {
       console.log("Check in ack", ack);
-      console.log("checkInData", ack);
       setIsSpectator(ack?.data?.isSpectator);
+      setBlockPermission(ack?.data?.blockPermission);
     });
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
     console.log("Check in to room", roomId);
@@ -339,6 +340,7 @@ export default function Room(props) {
             selectedRoom={selectedRoom}
             userId={userIdRef.current}
             isSpectator={isSpectator}
+            blockPermission={blockPermission}
             socket={props.socket}
             firstCheckInRef={firstCheckInRef.current}
           />

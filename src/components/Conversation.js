@@ -6,6 +6,8 @@ import List from "@material-ui/core/List";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
+import { IconButton } from "@material-ui/core";
+import BlockIcon from "@material-ui/icons/Block";
 import Divider from "@material-ui/core/Divider";
 import ListItem from "@material-ui/core/ListItem";
 import TextField from "@material-ui/core/TextField";
@@ -150,6 +152,13 @@ export default function Conversation(props) {
       { roomId: props.selectedRoom, pageNumber: 1 },
       (ack) => console.log("Request comments of room ack", ack)
     );
+  };
+
+  const blockUser = (visitorId) => {
+    props.socket.emit("blockVisitor", { visitorId }, (ack) => {
+      // Handle the acknowledgement
+      console.log("Block user ack:", ack);
+    });
   };
 
   const sendMessage = async (body) => {
@@ -297,6 +306,19 @@ export default function Conversation(props) {
                           >
                             Reply
                           </Button>
+                          {props.blockPermission && !message.sentByMe && (
+                            <IconButton
+                              onClick={() =>
+                                blockUser(message.sender.visitorId)
+                              }
+                              aria-label="block user"
+                              size="small"
+                              style={{ marginLeft: 4 }}
+                            >
+                              <BlockIcon />{" "}
+                              {/* This icon needs to be imported from material-ui/icons */}
+                            </IconButton>
+                          )}
                         </Grid>
                       </Grid>
                     </ListItem>
