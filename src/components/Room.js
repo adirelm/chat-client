@@ -91,9 +91,9 @@ export default function Room(props) {
   };
 
   const newRoomListener = async () => {
-    props?.socket.on("newRoom", async (data) => {
-      console.log("newRoom", data);
-      props?.socket.emit("join", { roomId: data.roomId }, (ack) =>
+    props?.socket.on("new_room", async (data) => {
+      console.log("new_room", data);
+      props?.socket.emit("join", { roomId: data.room_id }, (ack) =>
         console.log("Requesting to join room ack", ack)
       );
     });
@@ -130,16 +130,16 @@ export default function Room(props) {
 
   const newMessageListener = async () => {
     activeListener.current = true;
-    await props?.socket.on(`newMessage`, async (data) => {
+    await props?.socket.on(`new_message`, async (data) => {
       console.log("NEW MESSAGE DATA:", data);
       if (
         data?.sender?.id !== userIdRef?.current ||
-        data.entityType === "system"
+        data.entity_type === "system"
       ) {
         console.log("Received newMessage", data);
         setNewMessage(data);
       }
-      props?.socket.emit("room", { roomId: data.roomId }, (ack) =>
+      props?.socket.emit("room", { room_id: data.room_id }, (ack) =>
         console.log("Requesting room ack", ack)
       );
     });
@@ -167,7 +167,7 @@ export default function Room(props) {
 
   // Check into room - update membership status, update unread messages and badge
   const checkIn = async (roomId) => {
-    await props?.socket?.emit("checkIn", { roomId: roomId }, (ack) =>
+    await props?.socket?.emit("check_in", { room_id: roomId }, (ack) =>
       console.log("Check in ack", ack)
     );
     firstCheckInRef.current = Math.floor(Date.now() / 1000);
@@ -178,7 +178,7 @@ export default function Room(props) {
 
   // Check out of room - update membership last read and status
   const checkOut = async (roomId) => {
-    props?.socket.emit("checkOut", { roomId: roomId }, (ack) =>
+    props?.socket.emit("check_out", { room_id: roomId }, (ack) =>
       console.log(ack)
     );
   };
@@ -196,7 +196,7 @@ export default function Room(props) {
       if (room.id === roomId) {
         room.takeOver = !room.takeOver;
         // Emit the socket event
-        props?.socket.emit("takeOver", { roomId: roomId });
+        props?.socket.emit("take_over", { roomId: roomId });
       }
       return room;
     });
@@ -210,7 +210,7 @@ export default function Room(props) {
     // Optionally, if you're maintaining the AI Mode state in the frontend:
     const updatedRooms = rooms.map((room) => {
       if (room.id === roomId) {
-        room.aiMode = !room.aiMode;
+        room.ai_mode = !room.ai_mode;
       }
       return room;
     });
@@ -252,9 +252,11 @@ export default function Room(props) {
             <List>
               {filteredRooms.map((room) => {
                 let lastMessage = "";
-                if (room.lastMessage) {
+                if (room.last_message) {
                   lastMessage =
-                    room.lastMessage.sender.name + ": " + room.lastMessage.body;
+                    room.last_message.sender.name +
+                    ": " +
+                    room.last_message.body;
                   lastMessage =
                     lastMessage.length > 12
                       ? lastMessage.slice(0, 16) + "..."
@@ -292,7 +294,7 @@ export default function Room(props) {
                                 onClick={() => handleToggleAIMode(room.id)}
                               >
                                 <AIBrainIcon
-                                  color={room.aiMode ? "primary" : "disabled"}
+                                  color={room.ai_mode ? "primary" : "disabled"}
                                 />
                               </IconButton>
                             </Grid>
@@ -302,8 +304,8 @@ export default function Room(props) {
                     />
 
                     <Badge
-                      badgeContent={room.unreadMessages}
-                      invisible={room.unreadMessages > 0 ? false : true}
+                      badgeContent={room.unread_messages}
+                      invisible={room.unread_messages > 0 ? false : true}
                       color="primary"
                     >
                       <ChatBubbleOutlineIcon></ChatBubbleOutlineIcon>

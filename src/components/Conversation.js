@@ -61,7 +61,6 @@ export default function Conversation(props) {
   const lastMessageDate = useRef("");
   const [messages, setMessages] = useState([]);
   const [textValue, setTextValue] = useState("");
-  const [commentValue, setCommentValue] = useState("");
 
   const setRef = useCallback((node) => {
     if (node) {
@@ -72,7 +71,6 @@ export default function Conversation(props) {
   // Open a channel to receive messages
   useEffect(() => {
     messageListener();
-    commentsListener();
   }, []);
 
   useEffect(() => {
@@ -84,7 +82,7 @@ export default function Conversation(props) {
 
   useEffect(() => {
     // Add new incoming message
-    if (props.newMessage && props.selectedRoom === props.newMessage.roomId) {
+    if (props.newMessage && props.selectedRoom === props.newMessage.room_id) {
       setMessages((prevState) => [...prevState, props.newMessage]);
     }
   }, [props.newMessage]);
@@ -95,8 +93,8 @@ export default function Conversation(props) {
     // })
     await props.socket.on("messages", async (data) => {
       const newMessages = data.data;
-      const pageNumber = data.page.pageNumber;
-      const totalPages = data.page.totalPages;
+      const pageNumber = data.page.page_number;
+      const totalPages = data.page.total_pages;
       console.log("Upon requesting messages", data);
       if (pageNumber > 1) {
         setMessages((prevState) => [...newMessages, ...prevState]);
@@ -114,46 +112,24 @@ export default function Conversation(props) {
     });
   };
 
-  const commentsListener = async () => {
-    await props.socket.on("roomComments", async (data) => {
-      console.log(`Comments of room: `, data);
-    });
-  };
-
-  const getComments = async () => {
-    props?.socket.emit(
-      "roomComments",
-      { roomId: props.selectedRoom, pageNumber: 1 },
-      (ack) => console.log("Request comments of room ack", ack)
-    );
-  };
-
   const sendMessage = async (body) => {
     const message = {
-      roomId: props.selectedRoom,
+      room_id: props.selectedRoom,
       body,
     };
     setTextValue("");
     // Add new message current user sent
     if (props?.socket) {
-      await props.socket.emit("newMessage", message, (ack) => {
+      await props.socket.emit("new_message", message, (ack) => {
         console.log("Emit message ack", ack);
         if (ack.code >= 200 && ack.code <= 299) {
           setMessages((prevState) => [...prevState, ack.data]);
         }
       });
-      props?.socket.emit("room", { roomId: props.selectedRoom }, (ack) =>
+      props?.socket.emit("room", { room_id: props.selectedRoom }, (ack) =>
         console.log("Request room ack", ack)
       );
     }
-  };
-
-  const sendComment = async (newComment) => {
-    setCommentValue("");
-    await props.socket.emit("newComment", newComment, (ack) =>
-      console.log("Add new comment ack", ack)
-    );
-    console.log("Emit comment", newComment);
   };
 
   const loadPreviousMessages = async () => {
@@ -162,9 +138,9 @@ export default function Conversation(props) {
     props.socket.emit(
       "messages",
       {
-        roomId: props.selectedRoom,
-        pageNumber: page.current,
-        firstCheckInTimeStamp: firstCheckInTimeStamp,
+        room_id: props.selectedRoom,
+        page_number: page.current,
+        first_check_in_timestamp: firstCheckInTimeStamp,
       },
       (ack) => console.log("Emit messages ack", ack)
     );
@@ -195,8 +171,8 @@ export default function Conversation(props) {
                   messages[messages.length - 1].id === message.id;
                 const sameDate =
                   lastMessageDate?.current ===
-                  message.createdAt?.substring(0, 10);
-                lastMessageDate.current = message.createdAt?.substring(0, 10);
+                  message.created_at?.substring(0, 10);
+                lastMessageDate.current = message.created_at?.substring(0, 10);
 
                 return (
                   <ListItem key={message.id}>
@@ -210,13 +186,13 @@ export default function Conversation(props) {
                               ""
                             ) : (
                               <Moment format="MM/DD/YYYY">
-                                {moment(message.createdAt)}
+                                {moment(message.created_at)}
                               </Moment>
                             )
                           }
                         ></ListItemText>
 
-                        {message.entityType === "system" ? (
+                        {message.entity_type === "system" ? (
                           // System Message Layout
                           <div
                             style={{
@@ -245,26 +221,26 @@ export default function Conversation(props) {
                         ) : (
                           <>
                             <ListItemText
-                              align={message.sentByMe ? "right" : "left"}
+                              align={message.sent_by_me ? "right" : "left"}
                               primary={
-                                sameSender || message.sentByMe
+                                sameSender || message.sent_by_me
                                   ? ""
                                   : message.sender.name
                               }
                             ></ListItemText>
                             <Grid item xs={12}>
                               <ListItemText
-                                align={message.sentByMe ? "right" : "left"}
+                                align={message.sent_by_me ? "right" : "left"}
                                 primary={message.body}
                                 secondary={message.unread ? "unread" : ""}
                               ></ListItemText>
                             </Grid>
                             <Grid item xs={12}>
                               <ListItemText
-                                align={message.sentByMe ? "right" : "left"}
+                                align={message.sent_by_me ? "right" : "left"}
                                 secondary={
                                   <Moment format="HH:mm">
-                                    {moment(message.createdAt)}
+                                    {moment(message.created_at)}
                                   </Moment>
                                 }
                               ></ListItemText>
