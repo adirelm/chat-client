@@ -276,10 +276,28 @@ export default function Room(props) {
                     <ListItemIcon>
                       <Avatar />
                     </ListItemIcon>
+
                     <ListItemText
                       primary={
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                          {room.name}
+                        <div>
+                          <div
+                            style={{ display: "flex", alignItems: "center" }}
+                          >
+                            <Typography variant="body1" color="textPrimary">
+                              {room.name}
+                            </Typography>
+                          </div>
+                          <div
+                            style={{ display: "flex", alignItems: "center" }}
+                          >
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="textPrimary"
+                            >
+                              {lastMessage}
+                            </Typography>
+                          </div>
                           <Grid container alignItems="center" spacing={2}>
                             <Grid item>
                               <Switch
