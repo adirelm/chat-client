@@ -136,7 +136,7 @@ export default function Room(props) {
         data?.sender?.id !== userIdRef?.current ||
         data.entity_type === "system"
       ) {
-        console.log("Received newMessage", data);
+        console.log("Received new_message", data);
         setNewMessage(data);
       }
       props?.socket.emit("room", { room_id: data.room_id }, (ack) =>
@@ -194,9 +194,9 @@ export default function Room(props) {
   const handleToggleTakeOver = async (roomId) => {
     const updatedRooms = rooms.map((room) => {
       if (room.id === roomId) {
-        room.takeOver = !room.takeOver;
+        room.take_over = !room.take_over;
         // Emit the socket event
-        props?.socket.emit("take_over", { roomId: roomId });
+        props?.socket.emit("take_over", { room_id: roomId });
       }
       return room;
     });
@@ -205,7 +205,7 @@ export default function Room(props) {
 
   const handleToggleAIMode = async (roomId) => {
     // Call your socket event to toggle AI mode
-    props?.socket.emit("aiMode", { roomId: roomId });
+    props?.socket.emit("ai_mode", { room_id: roomId });
 
     // Optionally, if you're maintaining the AI Mode state in the frontend:
     const updatedRooms = rooms.map((room) => {
@@ -283,7 +283,7 @@ export default function Room(props) {
                           <Grid container alignItems="center" spacing={2}>
                             <Grid item>
                               <Switch
-                                checked={room.takeOver}
+                                checked={room.take_over}
                                 onChange={() => handleToggleTakeOver(room.id)}
                                 color="primary"
                                 size="small"
