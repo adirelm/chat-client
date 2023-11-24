@@ -254,6 +254,27 @@ export default function Conversation(props) {
                                 : message.sender.name
                             }
                           ></ListItemText>
+
+                          {/* Check if the message has an image and render it on the sender's side */}
+                          {message.image && (
+                            <div
+                              style={{
+                                textAlign: message.sent_by_me
+                                  ? "right"
+                                  : "left",
+                              }}
+                            >
+                              <img
+                                src={message.image}
+                                alt="Message Attachment"
+                                style={{
+                                  maxWidth: "100%",
+                                  height: "auto",
+                                  marginBottom: "10px",
+                                }}
+                              />
+                            </div>
+                          )}
                         </Grid>
 
                         <Grid item xs={12}>
@@ -269,7 +290,13 @@ export default function Conversation(props) {
                           ></ListItemText>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid
+                          item
+                          xs={12}
+                          style={{
+                            textAlign: message.sent_by_me ? "right" : "left",
+                          }}
+                        >
                           <ListItemText
                             align={message.sent_by_me ? "right" : "left"}
                             secondary={
