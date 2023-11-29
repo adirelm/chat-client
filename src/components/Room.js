@@ -168,9 +168,6 @@ export default function Room(props) {
         console.log("Received new_message", data);
         setNewMessage(data);
       }
-      props?.socket.emit("room", { room_id: data.roomId }, (ack) =>
-        console.log("Requesting room ack", ack)
-      );
     });
   };
 
