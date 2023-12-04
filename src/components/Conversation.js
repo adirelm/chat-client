@@ -169,12 +169,13 @@ export default function Conversation(props) {
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
     const firstCheckInTimeStamp = props.firstCheckInRef;
+    console.log(firstCheckInTimeStamp);
     props.socket.emit(
       "messages",
       {
-        roomId: props.selectedRoom,
-        pageNumber: page.current,
-        firstCheckInTimeStamp: firstCheckInTimeStamp,
+        room_id: props.selectedRoom,
+        page_number: page.current,
+        first_check_in_timestamp: firstCheckInTimeStamp,
       },
       (ack) => console.log("Emit messages ack", ack)
     );
