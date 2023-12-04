@@ -157,9 +157,6 @@ export default function Conversation(props) {
         console.log("Emit message ack", ack);
         setMessages((prevState) => [...prevState, ack.data]);
       });
-      props?.socket.emit("room", { room_id: props.selectedRoom }, (ack) =>
-        console.log("Request room ack", ack)
-      );
     }
 
     setReplyToMessage(null);
