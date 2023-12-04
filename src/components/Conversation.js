@@ -79,7 +79,6 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Conversation(props) {
-  console.log("isSpectator", props.isSpectator);
   const page = useRef(1);
   const classes = useStyles();
   const lastSender = useRef("");
@@ -169,7 +168,6 @@ export default function Conversation(props) {
   const loadPreviousMessages = async () => {
     page.current = page.current + 1;
     const firstCheckInTimeStamp = props.firstCheckInRef;
-    console.log(firstCheckInTimeStamp);
     props.socket.emit(
       "messages",
       {
