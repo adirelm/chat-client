@@ -20,6 +20,8 @@ import {
   ListItemText,
   ListItemIcon,
   IconButton,
+  Tabs,
+  Tab,
 } from "@material-ui/core";
 
 const drawerWidth = 240;
@@ -55,6 +57,24 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: "bold",
     marginLeft: theme.spacing(1),
   },
+  tabRoot: {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    marginBottom: theme.spacing(2),
+  },
+  tabs: {
+    paddingLeft: theme.spacing(2), // Adjust the left padding to align with the list items
+    paddingRight: theme.spacing(2),
+    backgroundColor: theme.palette.background.paper, // This can be adjusted to match your theme
+    boxShadow: `inset 0 -1px ${theme.palette.divider}`, // Adds a subtle line below the tabs
+  },
+  tab: {
+    minWidth: "50%", // Ensures that the tabs fill the drawer width
+    textTransform: "none", // Prevents uppercase styling if desired
+  },
+  scrollableList: {
+    overflowY: "auto",
+    maxHeight: `calc(100vh - ${theme.spacing(22)}px)`,
+  },
 }));
 
 export default function Room(props) {
@@ -64,12 +84,36 @@ export default function Room(props) {
   const activeListener = useRef(false);
   const [room, setRoom] = useState(null);
   const [rooms, setRooms] = useState([]);
+  const [tabValue, setTabValue] = useState(0); // 0 for Active, 1 for Archived
+  const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState();
   const [searchValue, setSearchValue] = useState("");
   const [selectedRoom, setSelectedRoom] = useState();
   const [filteredRooms, setFilteredRooms] = useState([]);
+  const [tabChanged, setTabChanged] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [blockPermission, setBlockPermission] = useState(false);
+
+  // rooms pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const listRef = useRef(null); // Ref for the List component
+
+  // Add the scroll event listener to the List component
+  useEffect(() => {
+    const listElement = listRef.current;
+    if (listElement) {
+      console.log("ADDED!");
+      listElement.addEventListener("scroll", handleScroll);
+    }
+
+    // Cleanup the event listener
+    return () => {
+      if (listElement) {
+        console.log("REMOVED");
+        listElement.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [currentPage, tabValue]);
 
   useEffect(() => {
     filterSearch();
@@ -212,11 +256,57 @@ export default function Room(props) {
   };
 
   const roomsListener = async () => {
-    await props?.socket.on("rooms", async (data) => {
-      const rooms = data.data;
-      setRooms(rooms);
-      console.log("rooms", rooms);
+    await props.socket.on("rooms", async (newRooms) => {
+      console.log("rooms:", newRooms.data);
+      // Use a function to update state to access the current state value
+      if (tabChanged) {
+        setRooms(newRooms); // If it's a new tab, replace the rooms with the new ones
+        setTabChanged(false); // Reset the tab change state
+      } else {
+        setRooms((prevRooms) => {
+          // Create a new array with all the old rooms and the new ones added to the end
+          const allRooms = [...prevRooms, ...newRooms.data];
+          // Optionally, remove duplicates based on room ID or some unique property
+          const uniqueRooms = Array.from(
+            new Set(allRooms.map((room) => room.id))
+          ).map((id) => {
+            return allRooms.find((room) => room.id === id);
+          });
+          return uniqueRooms;
+        });
+      }
+      setLoading(false); // Reset loading state
     });
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    setCurrentPage(1); // Reset to the first page
+    setRooms([]); // Clear existing rooms
+    setTabChanged(true); // Indicate that a tab change has occurred
+
+    const eventToEmit = newValue === 0 ? "rooms" : "archived_rooms";
+    props.socket.emit(eventToEmit, { page_number: 1 }); // Emit with page_number 1 when changing tabs
+  };
+
+  // Function to handle the infinite scroll
+  const handleScroll = (event) => {
+    if (loading) {
+      return;
+    }
+
+    const bottom =
+      event.target.scrollHeight - event.target.scrollTop <=
+      event.target.clientHeight + 100; // 100 is the offset to trigger before actually reaching the bottom
+    if (bottom) {
+      setLoading(true);
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+
+      // Determine which event to emit based on the active tab
+      const eventToEmit = tabValue === 0 ? "rooms" : "archived_rooms";
+      props.socket.emit(eventToEmit, { page_number: nextPage });
+    }
   };
 
   return (
@@ -258,7 +348,21 @@ export default function Room(props) {
                 setSearchValue(event.target.value);
               }}
             />
-            <List>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              indicatorColor="primary"
+              textColor="primary"
+              className={classes.tabs}
+            >
+              <Tab label="Active" className={classes.tab} />
+              <Tab label="Archived" className={classes.tab} />
+            </Tabs>
+            <List
+              className={classes.scrollableList}
+              ref={listRef}
+              onScroll={handleScroll}
+            >
               {filteredRooms.map((room) => {
                 let lastMessage = "";
                 if (room.last_message) {
