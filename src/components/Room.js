@@ -445,6 +445,7 @@ export default function Room(props) {
           <Conversation
             newMessage={newMessage}
             selectedRoom={selectedRoom}
+            rooms={filteredRooms}
             userId={userIdRef.current}
             isSpectator={isSpectator}
             blockPermission={blockPermission}

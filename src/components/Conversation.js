@@ -76,6 +76,61 @@ const useStyles = makeStyles((theme) => ({
     color: "#007BFF",
     fontStyle: "italic",
   },
+  imageUploadButton: {
+    backgroundColor: "#ffffff",
+    color: "#000000",
+    padding: theme.spacing(1),
+    margin: theme.spacing(1),
+    border: "2px solid #000000",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    "&:hover": {
+      backgroundColor: "#f0f0f0",
+    },
+  },
+  imageSelector: {
+    display: "flex",
+    flexDirection: "row",
+    overflowX: "auto",
+    whiteSpace: "nowrap",
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+    marginTop: theme.spacing(1),
+    border: "2px solid #000000",
+    borderRadius: "5px",
+    backgroundColor: "#f9f9f9",
+  },
+  thumbnailImage: {
+    display: "inline-block",
+    width: "auto",
+    maxHeight: "100px",
+    marginRight: theme.spacing(1),
+    cursor: "pointer",
+    border: "1px solid #ddd",
+    borderRadius: "5px",
+    "&:hover": {
+      border: "1px solid #000000",
+    },
+    "&:last-child": {
+      marginRight: 0,
+    },
+  },
+  hidden: {
+    display: "none",
+  },
+  messageImage: {
+    maxWidth: "100%", // ensure the image is not wider than its container
+    maxHeight: "200px", // adjust the height of the image to make it smaller
+    borderRadius: "4px", // slightly rounded corners for the image
+    boxShadow: "0 2px 4px rgba(0,0,0,0.2)", // subtle shadow for depth
+  },
+  messageImageSent: {
+    float: "right",
+  },
+  messageImageReceived: {
+    float: "left",
+  },
 }));
 
 export default function Conversation(props) {
@@ -86,6 +141,8 @@ export default function Conversation(props) {
   const [messages, setMessages] = useState([]);
   const [textValue, setTextValue] = useState("");
   const [replyToMessage, setReplyToMessage] = useState(null);
+  const [selectedImageKey, setSelectedImageKey] = useState(null);
+  const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
 
   const setRef = useCallback((node) => {
     if (node) {
@@ -149,6 +206,7 @@ export default function Conversation(props) {
       room_id: props.selectedRoom,
       body,
       reply_to_id: replyToMessage,
+      image: selectedImageKey,
     };
     setTextValue("");
     // Add new message current user sent
@@ -183,6 +241,15 @@ export default function Conversation(props) {
     if (!replyToMessage) return null;
     const message = messages.find((msg) => msg.id === replyToMessage);
     return message ? message.body : null;
+  };
+
+  const handleImageSelection = (thumbnailKey) => {
+    setSelectedImageKey(thumbnailKey);
+    setIsImageSelectorOpen(false);
+  };
+
+  const toggleImageSelector = () => {
+    setIsImageSelectorOpen(!isImageSelectorOpen);
   };
 
   if (props.selectedRoom)
@@ -263,11 +330,11 @@ export default function Conversation(props) {
                               <img
                                 src={message.image}
                                 alt="Message Attachment"
-                                style={{
-                                  maxWidth: "100%",
-                                  height: "auto",
-                                  marginBottom: "10px",
-                                }}
+                                className={`${classes.messageImage} ${
+                                  message.sent_by_me
+                                    ? classes.messageImageSent
+                                    : classes.messageImageReceived
+                                }`}
                               />
                             </div>
                           )}
@@ -338,6 +405,31 @@ export default function Conversation(props) {
                 className={classes.sendInputContainer}
               >
                 <Grid item xs={11}>
+                  <Button
+                    onClick={toggleImageSelector}
+                    className={classes.imageUploadButton}
+                  >
+                    Upload photo
+                  </Button>
+                  <div
+                    className={`${classes.imageSelector} ${
+                      isImageSelectorOpen ? "" : classes.hidden
+                    }`}
+                  >
+                    {props.rooms
+                      ?.find((room) => room.id === props.selectedRoom)
+                      ?.category?.photos.map((photo) => (
+                        <img
+                          key={photo.id}
+                          src={photo.thumbnail}
+                          alt="Selectable thumbnail"
+                          onClick={() =>
+                            handleImageSelection(photo.thumbnail_key)
+                          }
+                          className={classes.thumbnailImage}
+                        />
+                      ))}
+                  </div>
                   <TextField
                     value={textValue}
                     id="outlined-basic-email"
@@ -354,12 +446,15 @@ export default function Conversation(props) {
                   />
                 </Grid>
                 <Grid align="right">
-                  <Fab disabled={!textValue} color="primary" aria-label="add">
-                    <SendIcon
-                      onClick={async () => {
-                        await sendMessage(textValue);
-                      }}
-                    />
+                  <Fab
+                    color="primary"
+                    aria-label="add"
+                    disabled={!textValue && !selectedImageKey} // Button disabled if there's no text and no image selected
+                    onClick={async () => {
+                      await sendMessage(textValue);
+                    }}
+                  >
+                    <SendIcon />
                   </Fab>
                 </Grid>
               </Grid>
