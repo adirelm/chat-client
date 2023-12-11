@@ -13,6 +13,7 @@ import ListItem from "@material-ui/core/ListItem";
 import TextField from "@material-ui/core/TextField";
 import { makeStyles } from "@material-ui/core/styles";
 import ListItemText from "@material-ui/core/ListItemText";
+import { Dialog, DialogActions, DialogTitle } from "@material-ui/core";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 
 const drawerWidth = 240;
@@ -141,6 +142,8 @@ export default function Conversation(props) {
   const [messages, setMessages] = useState([]);
   const [textValue, setTextValue] = useState("");
   const [replyToMessage, setReplyToMessage] = useState(null);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [visitorIdToBlock, setVisitorIdToBlock] = useState(null);
   const [selectedImageKey, setSelectedImageKey] = useState(null);
   const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
 
@@ -194,11 +197,24 @@ export default function Conversation(props) {
     });
   };
 
-  const blockUser = (visitorId) => {
-    props.socket.emit("block_visitor", { visitor_id: visitorId }, (ack) => {
-      // Handle the acknowledgement
-      console.log("Block user ack:", ack);
-    });
+  const handleOpenBlockDialog = (visitorId) => {
+    setVisitorIdToBlock(visitorId);
+    setBlockDialogOpen(true);
+  };
+
+  const handleCloseBlockDialog = () => {
+    setBlockDialogOpen(false);
+  };
+
+  const blockUser = (period) => {
+    props.socket.emit(
+      "block_visitor",
+      { visitor_id: visitorIdToBlock, period },
+      (ack) => {
+        console.log("Block user ack:", ack);
+        handleCloseBlockDialog();
+      }
+    );
   };
 
   const sendMessage = async (body) => {
@@ -378,7 +394,7 @@ export default function Conversation(props) {
                           {props.blockPermission && !message.sent_by_me && (
                             <IconButton
                               onClick={() =>
-                                blockUser(message.sender.visitor_id)
+                                handleOpenBlockDialog(message.sender.visitor_id)
                               }
                               aria-label="block user"
                               size="small"
@@ -394,6 +410,24 @@ export default function Conversation(props) {
                   );
                 }
               })}
+              {/* Block User Dialog */}
+              <Dialog open={blockDialogOpen} onClose={handleCloseBlockDialog}>
+                <DialogTitle>Block User</DialogTitle>
+                <DialogActions>
+                  <Button
+                    onClick={() => blockUser("permanent")}
+                    color="primary"
+                  >
+                    Permanently
+                  </Button>
+                  <Button
+                    onClick={() => blockUser("temporary")}
+                    color="primary"
+                  >
+                    Temporary (48 hours)
+                  </Button>
+                </DialogActions>
+              </Dialog>
             </List>
 
             <Divider />
