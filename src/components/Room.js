@@ -171,7 +171,8 @@ export default function Room(props) {
 
   const createRoom = () => {
     // Emitting a createRoom event to the server
-    props?.socket.emit("create_room", null, (ack) => {
+    console.log("here");
+    props?.socket.emit("create_room", (ack) => {
       console.log("createRoom ack:", ack);
     });
   };
@@ -286,7 +287,7 @@ export default function Room(props) {
     setTabChanged(true); // Indicate that a tab change has occurred
 
     const eventToEmit = newValue === 0 ? "rooms" : "archived_rooms";
-    props.socket.emit(eventToEmit, { page_number: 1 }); // Emit with page_number 1 when changing tabs
+    props.socket.emit(eventToEmit, { page_number: 1, query: searchValue }); // Emit with page_number 1 when changing tabs
   };
 
   // Function to handle the infinite scroll
@@ -305,7 +306,10 @@ export default function Room(props) {
 
       // Determine which event to emit based on the active tab
       const eventToEmit = tabValue === 0 ? "rooms" : "archived_rooms";
-      props.socket.emit(eventToEmit, { page_number: nextPage });
+      props.socket.emit(eventToEmit, {
+        page_number: nextPage,
+        query: searchValue,
+      });
     }
   };
 

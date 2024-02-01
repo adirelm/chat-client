@@ -1,4 +1,5 @@
 import moment from "moment";
+import Papa from "papaparse";
 import Moment from "react-moment";
 import Fab from "@material-ui/core/Fab";
 import Grid from "@material-ui/core/Grid";
@@ -10,6 +11,7 @@ import { IconButton } from "@material-ui/core";
 import BlockIcon from "@material-ui/icons/Block";
 import Divider from "@material-ui/core/Divider";
 import ListItem from "@material-ui/core/ListItem";
+import GetAppIcon from "@material-ui/icons/GetApp";
 import TextField from "@material-ui/core/TextField";
 import { makeStyles } from "@material-ui/core/styles";
 import ListItemText from "@material-ui/core/ListItemText";
@@ -131,6 +133,13 @@ const useStyles = makeStyles((theme) => ({
   },
   messageImageReceived: {
     float: "left",
+  },
+  exportButton: {
+    margin: theme.spacing(1),
+    backgroundColor: theme.palette.grey[200],
+    "&:hover": {
+      backgroundColor: theme.palette.grey[300],
+    },
   },
 }));
 
@@ -268,11 +277,63 @@ export default function Conversation(props) {
     setIsImageSelectorOpen(!isImageSelectorOpen);
   };
 
+  // Helper function to flatten nested objects
+  const flattenObject = (obj, parent, res = {}) => {
+    for (let key in obj) {
+      let propName = parent ? parent + "_" + key : key;
+      if (typeof obj[key] === "object") {
+        flattenObject(obj[key], propName, res);
+      } else {
+        res[propName] = obj[key];
+      }
+    }
+    return res;
+  };
+
+  const exportChatData = () => {
+    props.socket.emit(
+      "export_chat_data",
+      { room_id: props.selectedRoom },
+      (data) => {
+        if (data) {
+          console.log(data);
+          // Flatten each object in the data array
+          const flattenedData = data.data.map((entry) => flattenObject(entry));
+
+          // Convert flattened data to CSV
+          const csv = Papa.unparse(flattenedData);
+
+          // Create a Blob from the CSV String
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+          // Create a link element for download
+          const link = document.createElement("a");
+          const url = URL.createObjectURL(blob);
+          link.href = url;
+          link.download = "chat_data.csv";
+
+          // Append link, trigger download and remove link
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    );
+  };
+
   if (props.selectedRoom)
     return (
       <div>
         <Grid container component={Paper} className={classes.chatSection}>
           <Grid item xs={9} className={classes.gridSize}>
+            <Button
+              variant="contained"
+              className={classes.exportButton}
+              startIcon={<GetAppIcon />}
+              onClick={exportChatData}
+            >
+              Export Chat
+            </Button>
             <List className={classes.messageArea}>
               <Button
                 variant="contained"
